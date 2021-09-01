@@ -115,6 +115,11 @@ Machine-learning estimation is done just like "spCATE".
 
 This function also supports general link functions using the "family_RR" argument in the same way as used in "spCATE".
 
+### User friendly interface
+A minimalistic yet still very flexible front-end function for all routines is provided through the "causalGLM" function. Check out the vignette to see how to use it! The only necessary arguments are: 
+1. A formula object for the CATE, OR, or RR
+2. The data: W, A, Y
+3. That's it! Feel free to customize the machine-learning routines available using the "learning_method" argument. Built in options are: auto-HAL, glm, glmnet, gam, earth (MARS), xgboost library. Cross-fitting is performed automatically. If you want to make your own learner, use the sl3_Learner argument and the tlverse/sl3 package.
 
 ## Is this like double-machine-learning?
 Yes, but better! TMLE, unlike double-machine-learning and other estimation equation methods, is a substitution estimator and therefore respects all constraints of the statistical model. This leads to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues.
