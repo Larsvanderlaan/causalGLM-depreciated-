@@ -62,7 +62,7 @@ This specifies a CATE model with effect modification by the baseline variable W_
 
 Be crazy and parametric model the CATE to your hearts content. The above formula is equivalent to CATE(W) = a + b W_1 + c W_1*W_2 + d W_1^2
 
-No model is (or can or should) be assumed for E[Y|A=0,W]. This is estimated using default or user-specified machine-learning via sl3.
+No model is assumed for E[Y|A=0,W] and it is instead estimated using default or user-specified machine-learning via sl3.
 By default, a theoretically understood, flexible, robust, sparsity and smoothness adapting smoothing spline is used to estimate this nonparametric component. Specifically, we employ the R package hal9001 which implements the highly adaptive lasso estimator (HAL). This allows you to focus all your energy and attention on making a good model for CATE. No need to worry about parts of the data distribution that don't matter for what you care about!
 
 If one wants to use a different link function for the CATE, you can pass a family object using the argument "family_CATE" (by default identity link). For example, if you want "formula_CATE = ~ 1 + W_1" to imply the exponential CATE model CATE(W) = exp(a + b * W_1) then use "family_CATE = poisson()".  
