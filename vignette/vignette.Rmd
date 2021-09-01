@@ -169,6 +169,37 @@ summary(causal_fit)
 
 ```
 
+# Parallize HAL
+
+
+```{r}
+set.seed(1500)
+data_list <- sim.CATE(2500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+trueCATE <- data_list$CATE
+# True treatment effect of data (is constant)
+print(trueCATE)
+
+# Let's learn it using semiparametric methods.
+# Lets specify a constant model for the CATE
+formula_CATE <- ~ 1
+
+# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree or num_knots or parallel.
+
+#### Set up doMC with 4 cores or just pass in ncores = 4 argument.
+doMC::registerDoMC(4)
+# Set parallel = T 
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE", parallel  = TRUE )
+# We got pretty close!
+summary(causal_fit)
+
+```
 
 # More customization with main functions
 

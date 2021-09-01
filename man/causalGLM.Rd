@@ -12,7 +12,6 @@ causalGLM(
   Y,
   estimand = c("CATE", "OR", "RR"),
   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),
-  inference_type = c("semiparametric", "parametric"),
   cross_fit = TRUE,
   sl3_Learner = NULL,
   glm_formula_A = NULL,
@@ -22,7 +21,7 @@ causalGLM(
   data_list = NULL,
   fast_analysis = TRUE,
   parallel = F,
-  ncores = 4,
+  ncores = NULL,
   smoothness_order = 1,
   max_degree = 2,
   num_knots = c(10, 5)
@@ -43,8 +42,6 @@ causalGLM(
 "glmnet": Learn using lasso with glmnet.
 "gam": Learn using generalized additive models with mgcv.
 "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.}
-
-\item{inference_type}{What inferential method to use. Currently only supports semiparametric `sp` methods.}
 
 \item{sl3_Learner}{A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.}
 

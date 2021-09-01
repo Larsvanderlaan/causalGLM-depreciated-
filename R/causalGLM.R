@@ -16,7 +16,6 @@
 #' CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.
-#' @param inference_type What inferential method to use. Currently only supports semiparametric `sp` methods.
 #' @param sl3_Learner A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.
 #' @param glm_formula_A A glm formula for P(A=1|W). Only used if learning_method = "glm".
 #' @param glm_formula_Y A glm formula for E[Y|A,W]. Only used if learning_method = "glm".
@@ -28,17 +27,18 @@
 #' @param max_degree Max interaction degree for HAL (see \code{hal9001/fit_hal})
 #' @param num_knots Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.
 #' @export
-causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),   inference_type = c(  "semiparametric", "parametric"), cross_fit = TRUE,  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = 4, smoothness_order = 1, max_degree = 2, num_knots = c(10,5) ){
-  if(parallel) {
+causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),    cross_fit = TRUE,  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order = 1, max_degree = 2, num_knots = c(10,5) ){
+  inference_type =  "semiparametric"
+  if(parallel & !is.null(ncores)) {
     doMC::registerDoMC(ncores)
-  }
+  } 
   if(!is.null(data_list)) {
     W <- data_list$W
     A <- data_list$A 
     Y <- data_list$Y
   }
   estimand <- match.arg(estimand)
-  inference_type <- match.arg(inference_type)
+  
   learning_method <- match.arg(learning_method)
   if( inference_type=="parametric") {
     stop("`parametric`` is currently not supported.  You can set learning_method = `glm` to get nearly the same estimates as parametric glm, although this is not recommended (use MARS or glmnet instead for adaptive parametric fitting).")
