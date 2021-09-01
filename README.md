@@ -21,29 +21,7 @@ Outputs include:
 3. 95% confidence intervals for coefficients
 4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
 
-### References:
-Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
-
-For machine-learnng, the package tlverse/hal9001 is used as default: https://github.com/tlverse/hal9001
-
-See also:
-
-Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
-
-Estimation of a non-parametric variable importance measure of a continuous exposure, Chambaz et al. (2012): https://projecteuclid.org/journals/electronic-journal-Nonparametricof-statistics/volume-6/issue-none/Estimation-of-a-non-parametric-variable-importance-measure-of-a/10.1214/12-EJS703.full
-
-Causal effects based on marginal structural models, Neugebauer, van der Laan (2007): 
-https://www.researchgate.net/publication/222318646_Nonparametric_causal_effects_based_on_marginal_structural_models  
-
-Related R packages: 
-
-https://github.com/ck37/varimpact/tree/master/R
-
-https://academic.oup.com/bioinformatics/article/31/18/3054/241218
-https://cran.case.edu/web/packages/tmle.npvi/tmle.npvi.pdf
-
-For fully nonparametric ATE-type methods, see the tmle package: https://cran.r-project.org/web/packages/tmle/index.html
-Or tlverse/tmle3: https://tlverse.org
+ 
 
 ## Targeted learning for robust efficient inference with machine-learning
 
@@ -156,6 +134,30 @@ https://digitalassets.lib.berkeley.edu/etd/ucb/text/Porter_berkeley_0028E_11248.
 Any confusion? Questions? Don't know which method to use? None of the methods handle your problem? Need a custom/specialized method?
 
 Just send me a message. I would be happy to develop and implement a new method to add to this package.
+
+## References:
+Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
+
+For machine-learnng, the package tlverse/hal9001 is used as default: https://github.com/tlverse/hal9001
+
+See also:
+
+Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
+
+Estimation of a non-parametric variable importance measure of a continuous exposure, Chambaz et al. (2012): https://projecteuclid.org/journals/electronic-journal-Nonparametricof-statistics/volume-6/issue-none/Estimation-of-a-non-parametric-variable-importance-measure-of-a/10.1214/12-EJS703.full
+
+Causal effects based on marginal structural models, Neugebauer, van der Laan (2007): 
+https://www.researchgate.net/publication/222318646_Nonparametric_causal_effects_based_on_marginal_structural_models  
+
+Related R packages: 
+
+https://github.com/ck37/varimpact/tree/master/R
+
+https://academic.oup.com/bioinformatics/article/31/18/3054/241218
+https://cran.case.edu/web/packages/tmle.npvi/tmle.npvi.pdf
+
+For fully nonparametric ATE-type methods, see the tmle package: https://cran.r-project.org/web/packages/tmle/index.html
+Or tlverse/tmle3: https://tlverse.org
 
 
 ## Parametric, Semiparametric, Nonparametric models and future goals.
