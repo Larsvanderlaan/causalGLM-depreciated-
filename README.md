@@ -67,12 +67,15 @@ Specifically, this functions only assumes a parametric model for CATE(W) and doe
 Useful models include:
 
 1. Constant CATE: formula_CATE = ~ 1
+
 This specifies a constant CATE and the function will return estimates and inference for a single coefficient which can be directly interpreted as the treatment effect.
 
 2. Effect modification and subgroup effects: formula_CATE = ~ 1 + W_1
+
 This specifies a CATE model with effect modification by the baseline variable W_1. Estimates and inference are returned for both the intercept and coefficient in front of W_1. This can be interpreted just like linear regression-based estimates are interpreted.
 
 3. Crazy 8 and Crazy CATE: formula_CATE = ~ 1 + W_1 + W_1*W_2 + poly(W_1, degree = 2, raw = T)
+
 Be crazy and parametric model the CATE to your hearts content. The above formula is equivalent to CATE(W) = a + b W_1 + c W_1*W_2 + d W_1^2
 
 No model is (or can or should) be assumed for E[Y|A=0,W]. This is estimated using default or user-specified machine-learning via sl3.
