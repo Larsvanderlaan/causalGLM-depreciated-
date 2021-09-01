@@ -19,6 +19,14 @@ Outputs include:
 3. 95% confidence intervals for coefficients
 4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
 
+## Targeted learning for robust efficient inference with machine-learning
+
+Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
+
+Targeted maximum likelihood estimation is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures. Another name
+
+
+
 ## Data-structure
 All functions utilize the data-structure (W,A,Y) where
 1. "W = (W_1,W_2,W_3,...)" represents a vector of baseline variables/covariates/confounders for which to adjust (passed as a named matrix or data.frame)
@@ -29,7 +37,7 @@ All functions utilize the data-structure (W,A,Y) where
 "spCATE" implements causal linear regression for additive treatment effects.  
 The default model is the so-called "partially linear regression model" defined as
 E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is user-specified.
-Using the argument "formula_CATE", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3.
+Using the argument "formula_CATE", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
 
 Specifically, this functions only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.
 
@@ -62,6 +70,37 @@ This is equivalent to assuming the logistic regression model
 P(Y=1|A,W) = expit{A*logOR(W) + logit(P(Y=1|A=0,W))}
 where P(Y=1|A=0,W) is unspecified and learned using machine-learning.
 
-Using the argument "formula_OR", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3.
+Using the argument "formula_logOR", one can specify a linear model for the log conditional odds ratio between A and Y of the form logOR(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
+
+Useful models include:
+
+1. Constant odds ratio: formula_logOR ~ 1
+2. Odds ratio modification and subgroup effects: formula_logOR ~ 1 + W_1 + W_2
+
+Machine-learning estimation is done just like "spCATE".
+
+## Conditional Relative Risk regression (RR) with "spRR"
+When Y is nonnegative (e.g. binary or a count), the causal relative risk or causal relative treatment effect may be of interest. "spRR" implements causal relative risk regression (using generalized causal poisson regression).
+
+The model used is the so-called "partially-linear relative risk/poisson regression model" which *only* assumes
+
+log RR(W) := log{E[Y|A=1,W] / E[Y|A=0,W]} ~ user-specified parametric model.
+That is, the user specified parametric model (at the exponential scale) for the relative risk of Y with respect to A.
+
+This is equivalent to assuming the poisson-type regression model
+E[Y|A,W] = E[Y|A=0,W] exp(log RR(W)) = E[Y|A=0,W] RR(W).
+where log RR(W) is parametric and E[Y|A=0,W] is the background/placebo outcome model which is unspecified and learned using machine-learning.
+
+Using the argument "formula_logRR", one can specify a linear model for the log relative risk of the form log RR(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
+
+Useful models include:
+
+1. Constant odds ratio: formula_logRR ~ 1
+2. Odds ratio modification and subgroup effects: formula_logRR ~ 1 + W_1 + W_2
+
+Machine-learning estimation is done just like "spCATE".
+
+This function also supports general link functions using the "family_RR" argument in the same way as used in "spCATE".
+
 
 
