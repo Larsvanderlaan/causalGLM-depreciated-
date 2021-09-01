@@ -1,6 +1,6 @@
 # causalGLM
 
-## Semiparametric generalized linear models for causal inference using targeted machine-learning 
+## Semiparametric generalized linear models for causal inference using targeted auto-machine-learning 
 
 Believe it or not, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models is dangerous. With even a little bit confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question.
 
@@ -25,7 +25,7 @@ Outputs include:
 
 Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
 
-Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures. Another name for this package could be "targeted generalized linear models".
+Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures.  
 
 TMLE dates back to 2000-2006 and is a state-of-the-art method for efficient semiparametric estimation and inference using machine-learning tools.
 
@@ -132,7 +132,7 @@ Just send me a message. I would be happy to develop and implement a new method t
 
 ## Parametric, Semiparametric, Nonparametric models and future goals.
 
-Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, semiparametric models don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias. This is especially important in observational studies where incorrect parametric models can be extremely misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness). 
+Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, the semiparametric models implemented here don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias. This is especially important in observational studies where incorrect parametric models can be extremely misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness). 
 
 One goal of this package is to have the long-said quote "parametric models are all wrong but some are useful" be rejected and replaced with 
 1. "Parametric models are all wrong and are all useless"
