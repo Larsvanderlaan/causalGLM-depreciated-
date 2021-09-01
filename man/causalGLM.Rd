@@ -10,19 +10,22 @@ causalGLM(
   W,
   A,
   Y,
-  learning_method = c("autoML", "glm", "glmnet", "gam", "xgboost"),
-  method = c("CATE", "OR", "RR"),
+  estimand = c("CATE", "OR", "RR"),
+  learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),
   inference_type = c("semiparametric", "parametric"),
+  cross_fit = TRUE,
   sl3_Learner = NULL,
   glm_formula_A = NULL,
   glm_formula_Y = NULL,
   glm_formula_Y0W = glm_formula_Y,
   weights = NULL,
+  data_list = NULL,
+  fast_analysis = TRUE,
   parallel = F,
   ncores = 4,
   smoothness_order = 1,
   max_degree = 2,
-  num_knots = c(20, 10)
+  num_knots = c(10, 5)
 )
 }
 \arguments{
@@ -35,16 +38,11 @@ causalGLM(
 \item{Y}{n outcome variable (continuous, nonnegative or binary depending on method)}
 
 \item{learning_method}{Machine-learning method to use. This is overrided if argument \code{sl3_Learner} is provided. Options are:
-"autoML": Adaptive robust machine-learning using the Highly Adaptive Lasso (tlverse/hal9001)  
+"autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001}
 "glm": Fit nuisances with parametric model. See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
 "glmnet": Learn using lasso with glmnet.
 "gam": Learn using generalized additive models with mgcv.
 "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.}
-
-\item{method}{Estimand/parameter to estimate. Choices are:
-CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
-OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
-OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.}
 
 \item{inference_type}{What inferential method to use. Currently only supports semiparametric `sp` methods.}
 
@@ -67,6 +65,11 @@ OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies pa
 \item{max_degree}{Max interaction degree for HAL (see \code{hal9001/fit_hal})}
 
 \item{num_knots}{Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.}
+
+\item{Estimand}{Estimand/parameter to estimate. Choices are:
+CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
+OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
+OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.}
 }
 \description{
 causalGLM

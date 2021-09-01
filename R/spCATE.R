@@ -184,7 +184,9 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_L
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
 
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
-  out <- cbind(est, se, se/sqrt(n), Zvalue, ci, pvalue)
-  colnames(out) <- c("coef", "se", "se/sqrt(n)", "Z-score", "CI_left", "CI_right", "p-value")
-  out
+  out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
+  colnames(out) <- c("coef", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  output <- (list(coefs = out, var_mat = var(EIF)))
+  class(output) <- c("spCATE", "causalGLM")
+  output
 }

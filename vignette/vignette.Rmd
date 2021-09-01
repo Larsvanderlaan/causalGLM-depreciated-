@@ -1,0 +1,185 @@
+---
+title: "vignette"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# causalGLM user-guide
+
+## CATE estimation
+```{r}
+set.seed(1500)
+data_list <- sim.CATE(500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+trueCATE <- data_list$CATE
+# True treatment effect of data (is constant)
+print(trueCATE)
+
+# Let's learn it using semiparametric methods.
+# Lets specify a constant model for the CATE
+formula_CATE <- ~ 1
+
+# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree or num_knots or parallel.
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE")
+# We got pretty close!
+summary(causal_fit)
+
+```
+
+```{r}
+# We can also use generalized additive models.
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  learning_method = "gam", estimand = "CATE")
+summary(causal_fit)
+
+# We can also use lasso (glmnet). This is useful for very high dimensional models. (By default, it is cross-fitted to reduce bias).
+# It is amazing that we can get valid inference using the LASSO.
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  learning_method = "glmnet", estimand = "CATE")
+summary(causal_fit)
+
+
+# We can also use cross-fitted and CV-tuned xgboost. (glmnet is included in the cross-validation selection library/ensemble as well.)
+# Xgboost is black-box. But, we can still get inference!
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  learning_method = "xgboost", estimand = "CATE")
+summary(causal_fit)
+
+```
+
+
+
+## OR estimation
+
+```{r}
+set.seed(1500)
+data_list <- sim.OR(500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+truelogOR <- data_list$logOR
+# True log OR of data (is constant)
+print(truelogOR)
+
+# Let's learn it using semiparametric methods.
+# Lets specify a constant model for the OR
+formula_logOR <- ~ 1
+
+# Let use MARS (multivariate adaptive regression splines) using the "earth" package.
+# It is amazing that we can get valid inference using the greedy selection algorithms like MARS!
+causal_fit <- causalGLM(formula = formula_logOR, W  = W, A = A, Y = Y,  estimand = "OR", learning_method = "mars")
+# We got pretty close!
+
+
+summary(causal_fit)
+
+```
+
+
+
+
+## RR estimation
+
+
+```{r}
+set.seed(577200)
+data_list <- sim.RR(500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+ 
+# True log RR of data (is constant)
+print(data_list$logRR)
+
+# Let's learn it using semiparametric methods.
+# Lets specify a constant model for the RR
+formula_logRR <- ~ 1
+
+# This will take a few seconds. 
+causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand = "RR", learning_method = "mars")
+# We got pretty close!
+ 
+ summary(causal_fit) 
+
+```
+
+Note this function can be unstable if RR = E[Y|A=1]/E[Y|A=0] is very large (e.g. E[Y|A=0] is very small). 
+
+
+# Custom machine learning with sl3
+
+
+```{r}
+library(sl3)
+set.seed(1500)
+data_list <- sim.CATE(1000, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+trueCATE <- data_list$CATE
+# True treatment effect of data (is constant)
+trueCATE
+
+# Let's learn it using semiparametric methods.
+# Lets specify a constant model for the CATE
+formula_CATE <- ~ 1
+
+
+# Lets use cross-fitted SuperLearner (stacking/ensemble learning)
+# Useful learners
+lrnr_glmnet <- Lrnr_glmnet$new()
+lrnr_xgboost_3 <- Lrnr_xgboost$new(max_depth = 3)
+lrnr_xgboost_5 <- Lrnr_xgboost$new(max_depth = 5)
+lrnr_gam <- Lrnr_gam$new()
+lrnr_mars <- Lrnr_earth$new()
+
+# Create stack/ensemble of learners
+lrnr_stack <- make_learner(Stack, lrnr_glmnet, lrnr_xgboost_3, lrnr_xgboost_5, lrnr_gam, lrnr_mars)
+# Lets make it predict cross-validated prediction stacks
+lrnr_cv <-  Lrnr_cv$new(lrnr_stack)
+# Choose a meta learner
+## cross-validation selection
+lrnr_sl <- make_learner(Pipeline, lrnr_cv, Lrnr_cv_selector$new(loss_squared_error))
+## Or instead use nonnegative least squares to combine predictions. 
+lrnr_sl <- make_learner(Pipeline, lrnr_cv, Lrnr_nnls$new())
+
+# We can now pass in the learner.
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE", 
+                        sl3_Learner = lrnr_sl)
+# We got pretty close!
+summary(causal_fit)
+
+```
+
+
+# More customization with main functions
+
+Using the below main functions, you can choose specific learners for A and Y and another specifications. 
+The input arguments are similar to the causalGLM function. Take a look at the documentation.
+
+```{r}
+
+# spCATE
+# spOR
+# spRR
+
+
+```

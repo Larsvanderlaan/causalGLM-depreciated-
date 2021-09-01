@@ -315,8 +315,10 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
   ci <- cbind(estimates,   se/sqrt(n), se ,estimates - 1.96*se/sqrt(n), estimates + 1.96*se/sqrt(n), Zvalue, pvalue)
   colnames(ci) <- c("coefs",   "se/sqrt(n)", "se","lower_CI", "upper_CI", "Z-value", "p-value")
-  output <- list(coefs = ci, var_mat = var_scaled, logOR_at_W_new = preds_new, pred_function = compute_predictions,   learner_fits = list(A = fit_A, Y = fit_Y), converged_flag = converged_flag)
-  class(output) <- c("spOR","npOddsRatio")
+  #output <- list(coefs = ci, var_mat = var_scaled, logOR_at_W_new = preds_new, pred_function = compute_predictions,   learner_fits = list(A = fit_A, Y = fit_Y), converged_flag = converged_flag)
+  output <- list(coefs = ci, var_mat = var_scaled, pred_function = compute_predictions)
+  
+  class(output) <- c("spOR", "causalGLM")
   return(output)
   #######
 

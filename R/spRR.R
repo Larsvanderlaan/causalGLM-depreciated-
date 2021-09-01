@@ -65,9 +65,9 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(W), "A"), outcome = "Y", weights= "weights")
 
   sl3_Lrnr_Y <- sl3_Lrnr_Y$train(task_Y)
-  Q <-  pmax(sl3_Lrnr_Y$predict(task_Y),5*1e-3)
-  Q1 <-  pmax(sl3_Lrnr_Y$predict(task_Y1),5*1e-3)
-  Q0 <-  pmax(sl3_Lrnr_Y$predict(task_Y0),5*1e-3)
+  Q <-  pmax(sl3_Lrnr_Y$predict(task_Y),0.01)
+  Q1 <-  pmax(sl3_Lrnr_Y$predict(task_Y1),0.01)
+  Q0 <-  pmax(sl3_Lrnr_Y$predict(task_Y0),0.01)
 
 
 
@@ -79,12 +79,10 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   link <- V %*% beta
   logRR <- as.vector(family_RR$linkinv(link))
   RR <- as.vector(exp(logRR))
-  Q0 <- as.vector(as.vector(Q0))
-  Q1 <- as.vector(Q0 * RR)
+  Q0 <- pmax(as.vector(as.vector(Q0)),0.01)
+  Q1 <- pmax(as.vector(Q0 * RR),0.01)
   Q <- as.vector(ifelse(A==1, Q1, Q0))
-  print(range(Q1))
-  print(range(Q0))
-  print(range(RR))
+   
 
 
 
@@ -141,14 +139,14 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
 
 
     optim_fit <- optim(
-      par = list(epsilon = 0.01), fn = risk_function,
-      lower = 0, upper = 0.01,
+      par = list(epsilon = 0.05), fn = risk_function,
+      lower = 0, upper = 0.15,
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par
-    Q0 <- exp(log(Q0) + hstar %*% eps)
+    Q0 <-  pmax(exp(log(Q0) + hstar %*% eps), 0.01)
     RR <- exp(family_RR$linkinv(linpred +  V %*% eps))
-    Q1 <- RR*Q0
+    Q1 <- pmax(RR*Q0, 0.01)
     Q <- ifelse(A==1, Q1, Q0)
     beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
 
@@ -160,7 +158,10 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
 
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
-  out <- cbind(est, se, se/sqrt(n), Zvalue, ci, pvalue)
-  colnames(out) <- c("coef", "se", "se/sqrt(n)", "Z-score", "CI_left", "CI_right", "p-value")
-  out
+  out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
+  colnames(out) <- c("coef", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  
+  output <- list(coefs = out, var_mat = var(EIF))
+  class(output) <- c("spRR", "causalGLM")
+  output
 }

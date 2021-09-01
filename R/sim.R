@@ -36,7 +36,7 @@ sim.RR <- function(n=1500, p=2) {
   betaA <- rnorm(p)
   betaA <- 1.5 * betaA / sum(betaA)
   betaY <- rnorm(p)
-  betaY <- 2 * betaY / sum(betaY)
+  betaY <- 1 * betaY / sum(betaY)
   names(betaA) <- colnames(W)
   names(betaY) <- colnames(betaY)
   
@@ -44,7 +44,7 @@ sim.RR <- function(n=1500, p=2) {
   A <- rbinom(n, size = 1, prob = g1)
   
   
-  Q0 <- 0.4*plogis( W %*% betaY)
+  Q0 <- 0.1 + 0.3*plogis( W %*% betaY)
   RR <- 2
   Q <- (1-A)*Q0 + A*Q0*RR
   Y <- rbinom(n, size = 1, prob = Q) 
