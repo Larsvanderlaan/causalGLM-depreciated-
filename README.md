@@ -1,6 +1,6 @@
 # causalGLM
 
-## Semiparametric generalized linear models for causal inference using targeted auto-machine-learning 
+## Semiparametric generalized linear models for causal inference using targeted machine-learning 
 
 Believe it or not, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models can be dangerous. With even a little bit of confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)?
 
