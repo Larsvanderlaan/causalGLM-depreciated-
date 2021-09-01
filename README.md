@@ -27,7 +27,7 @@ Outputs include:
 
 Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
 
-Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures.  
+Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework that allows for inference even when using machine-learning and variable selection procedures.  
 
 TMLE dates back to 2000-2006 and is a state-of-the-art method for efficient semiparametric estimation and inference using machine-learning tools.
 
