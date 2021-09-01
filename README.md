@@ -41,10 +41,12 @@ All functions utilize the data-structure (W,A,Y) where
 ### Conditional average treatment effects (CATE) with "spCATE"
 "spCATE" implements causal linear regression for additive treatment effects.  
 The default model is the so-called "partially linear regression model" defined as
-E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is user-specified.
+E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is user-specified and E[Y|A=0,W] is learned nonparametrically using machine-learning.
+
+
 Using the argument "formula_CATE", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
 
-Specifically, this functions only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.
+This function only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.
 
 
 Useful models include:
@@ -75,7 +77,9 @@ logOR(W) := log[ {P(Y=1|A=1,W)/P(Y=0|A=1,W)} / {P(Y=1|A=0,W)/P(Y=0|A=0,W)} ] ~ u
 That is, the user specifies a parametric model for the log odds between A and Y and nothing else is assumed known.
 
 This is equivalent to assuming the logistic regression model
+
 P(Y=1|A,W) = expit{A*logOR(W) + logit(P(Y=1|A=0,W))}
+
 where P(Y=1|A=0,W) is unspecified and learned using machine-learning.
 
 Using the argument "formula_logOR", one can specify a linear model for the log conditional odds ratio between A and Y of the form logOR(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
@@ -93,10 +97,11 @@ When Y is nonnegative (e.g. binary or a count), the causal relative risk or caus
 The model used is the so-called "partially-linear relative risk/poisson regression model" which *only* assumes
 
 log RR(W) := log{E[Y|A=1,W] / E[Y|A=0,W]} ~ user-specified parametric model.
-That is, the user specified parametric model (at the exponential scale) for the relative risk of Y with respect to A.
+
+That is, we only assume the user specified parametric model (at the exponential scale) for the relative risk of Y with respect to A.
 
 This is equivalent to assuming the poisson-type regression model
-E[Y|A,W] = E[Y|A=0,W] exp(log RR(W)) = E[Y|A=0,W] RR(W).
+E[Y|A,W] = E[Y|A=0,W] exp(log RR(W)) = E[Y|A=0,W] RR(W),
 where log RR(W) is parametric and E[Y|A=0,W] is the background/placebo outcome model which is unspecified and learned using machine-learning.
 
 Using the argument "formula_logRR", one can specify a linear model for the log relative risk of the form log RR(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
