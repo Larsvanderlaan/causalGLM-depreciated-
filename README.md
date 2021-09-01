@@ -149,11 +149,12 @@ Just send me a message. I would be happy to develop and implement a new method t
 ## References:
 Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
 
-For machine-learnng, the package tlverse/hal9001 is used as default: https://github.com/tlverse/hal9001
+
+The relative risk method is treated in Targeted Maximum Likelihood Estimation of Conditional Relative Risk in a Semi-parametric Regression Model, Tuglus et al. (2011): https://biostats.bepress.com/ucbbiostat/paper283/.
+The CATE method is treated in Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
+For machine-learnng, the package tlverse/hal9001 and tlverse/sl3 are used: https://github.com/tlverse/hal9001
 
 See also:
-
-Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
 
 Estimation of a non-parametric variable importance measure of a continuous exposure, Chambaz et al. (2012): https://projecteuclid.org/journals/electronic-journal-Nonparametricof-statistics/volume-6/issue-none/Estimation-of-a-non-parametric-variable-importance-measure-of-a/10.1214/12-EJS703.full
 
@@ -163,7 +164,6 @@ https://www.researchgate.net/publication/222318646_Nonparametric_causal_effects_
 Related R packages: 
 
 https://github.com/ck37/varimpact/tree/master/R
-
 https://academic.oup.com/bioinformatics/article/31/18/3054/241218
 https://cran.case.edu/web/packages/tmle.npvi/tmle.npvi.pdf
 
@@ -171,21 +171,7 @@ For fully nonparametric ATE-type methods, see the tmle package: https://cran.r-p
 Or tlverse/tmle3: https://tlverse.org
 
 
-## Parametric, Semiparametric, Nonparametric models and future goals.
-
-Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, the semiparametric models implemented here don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias in many settings. This is especially important in observational studies where incorrect parametric models can be very misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness)). 
-
-One goal of this package is to have the long-said quote "parametric models are all wrong but some are useful" be rejected and replaced with 
-1. "Parametric models are all wrong and are all useless"
-2. "Semiparametric models are all wrong but some are useful".
-
-Once this goal has been accomplished, my next goal is to have the not-so-long-said quote "Semiparametric models are all wrong but some are useful" be rejected and replaced with 
-1. "Semiparametric models are all wrong and are all useless"
-2. "Nonparametric models are always correct and all of them are useful".
-
-To accomplish the second goal, I will be implementing "np" versions of the "sp" method that provide nonparametrically correct inference for parametric components of semiparametric models. These nonparametric methods treat the parametric specifications as working/approximate models (which are indeed useful) but allow for correct and interpretable estimates and inference even when the working parametric model is wrong.
-
-Joking aside, I will leave it to you to decide which version of the methods are best for the job.  
+ 
  
 
 
