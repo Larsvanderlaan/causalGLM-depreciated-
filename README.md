@@ -173,7 +173,7 @@ Or tlverse/tmle3: https://tlverse.org
 
 ## Parametric, Semiparametric, Nonparametric models and future goals.
 
-Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, the semiparametric models implemented here don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias. This is especially important in observational studies where incorrect parametric models can be extremely misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness). 
+Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, the semiparametric models implemented here don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias in many settings. This is especially important in observational studies where incorrect parametric models can be very misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness)). 
 
 One goal of this package is to have the long-said quote "parametric models are all wrong but some are useful" be rejected and replaced with 
 1. "Parametric models are all wrong and are all useless"
@@ -185,7 +185,7 @@ Once this goal has been accomplished, my next goal is to have the not-so-long-sa
 
 To accomplish the second goal, I will be implementing "np" versions of the "sp" method that provide nonparametrically correct inference for parametric components of semiparametric models. These nonparametric methods treat the parametric specifications as working/approximate models (which are indeed useful) but allow for correct and interpretable estimates and inference even when the working parametric model is wrong.
 
-Joking aside, I will leave it to you to decide which version of the methods are best for the job. For completeness and comparison, I will also implement "p" versions of the functions, which are fully parametric.
+Joking aside, I will leave it to you to decide which version of the methods are best for the job.  
  
 
 
