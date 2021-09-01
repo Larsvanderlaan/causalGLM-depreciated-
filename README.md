@@ -122,7 +122,7 @@ A minimalistic yet still very flexible front-end function for all routines is pr
 4. That's it! Feel free to customize the machine-learning routines available using the "learning_method" argument. Built in options are: auto-HAL, glm, glmnet, gam, earth (MARS), CV-autotuned-xgboost. Cross-fitting is performed automatically. If you want to make your own learner, use the sl3_Learner argument and the tlverse/sl3 package.
 
 ## Is this like double-machine-learning?
-Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects all constraints of the statistical model and listens to the data. This can lead to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues (Porter et al., 2012). 
+Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects all constraints of the statistical model and listens to the data as much as possible. This can lead to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues (Porter et al., 2012). 
 
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default robust machine-learning is performed so user specification is not necessary). 
 
