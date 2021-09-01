@@ -21,6 +21,25 @@ Outputs include:
 3. 95% confidence intervals for coefficients
 4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
 
+### References:
+Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
+
+See also:
+
+Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
+
+Estimation of a non-parametric variable importance measure of a continuous exposure, Chambaz et al. (2012): https://projecteuclid.org/journals/electronic-journal-Nonparametricof-statistics/volume-6/issue-none/Estimation-of-a-non-parametric-variable-importance-measure-of-a/10.1214/12-EJS703.full
+
+Causal effects based on marginal structural models, Neugebauer, van der Laan (2007): 
+https://www.researchgate.net/publication/222318646_Nonparametric_causal_effects_based_on_marginal_structural_models  
+
+Related R packages: 
+
+https://github.com/ck37/varimpact/tree/master/R
+
+https://academic.oup.com/bioinformatics/article/31/18/3054/241218
+https://cran.case.edu/web/packages/tmle.npvi/tmle.npvi.pdf
+
 ## Targeted learning for robust efficient inference with machine-learning
 
 Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
@@ -122,6 +141,7 @@ lrnr_cross_fit <- make_learner(Pipeline, Lrnr_cv$new(), lrnr)
 Relevant reads:
 https://vanderlaan-lab.org/2019/12/24/cv-tmle-and-double-machine-learning/
 https://pubmed.ncbi.nlm.nih.gov/31742333/
+https://digitalassets.lib.berkeley.edu/etd/ucb/text/Porter_berkeley_0028E_11248.pdf
 
 ## Need a new or specialized method?
 
