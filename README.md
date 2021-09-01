@@ -2,9 +2,9 @@
 
 ## Semiparametric generalized linear models for causal inference using targeted machine-learning 
 
-Remarkably, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models can be dangerous. With even a little bit of confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
+Remarkably, it is possible to get robust and efficient inference for causal quantities using machine-learning. Specially in the search for answers to causal questions, assuming parametric models can be dangerous. With even a seemingly small amount of confounding and misspecificaton, they can give remarkably biased answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
 
-In this package, we utilize targeted machine-learning (TMLE) to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (robust inference even when sample sizes are as small as 50-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in all types of settings. 
+In this package, we utilize targeted machine-learning (TMLE) to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 50-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in all types of settings. 
 
 
 So far, this package supports:
@@ -25,7 +25,7 @@ Outputs include:
 
 ## Targeted learning for robust efficient inference using machine-learning
 
-Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
+Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using nonparametric possibly black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
 
 Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework that allows for inference even when using machine-learning and variable selection procedures.  
 
@@ -122,7 +122,7 @@ A minimalistic yet still very flexible front-end function for all routines is pr
 4. That's it! Feel free to customize the machine-learning routines available using the "learning_method" argument. Built in options are: auto-HAL, glm, glmnet, gam, earth (MARS), CV-autotuned-xgboost. Cross-fitting is performed automatically. If you want to make your own learner, use the sl3_Learner argument and the tlverse/sl3 package.
 
 ## Is this like double-machine-learning?
-Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects all constraints of the statistical model and listens to the data. This leads to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues.
+Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects all constraints of the statistical model and listens to the data. This can lead to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues (Porter et al., 2012). 
 
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default robust machine-learning is performed so user specification is not necessary). 
 
@@ -146,6 +146,9 @@ Any confusion? Questions? Don't know which method to use? None of the methods ha
 Just send me a message. I would be happy to develop and implement a new method to add to this package.
 
 ## References:
+
+These semiparametric models have a rich history and their theory goes back a long time. These references are very incomplete and and further references will be added in the future.
+
 Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
 
 
