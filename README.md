@@ -11,7 +11,7 @@ So far, this package supports:
 
 1. Conditional average treatment effect estimation with "spCATE". (Causal semiparametric linear regression with general link functions)
 2. Conditional odds ratio estimation between two binary variables with "spOR". (Causal semiparametric logistic regression)
-3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric poisson/relative-risk regression with general link functions)
+3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric log-linear relative-risk regression with general link functions)
 
 The functions are easy to use. The only required input from users is the data (of course) and a R-formula object (just like glm) for the CATE/OR/RR.
 
@@ -92,7 +92,7 @@ Useful models include:
 Machine-learning estimation is done just like "spCATE".
 
 ### Conditional Relative Risk regression (RR) with "spRR"
-When Y is nonnegative (e.g. binary or a count), the causal relative risk or causal relative treatment effect may be of interest. "spRR" implements causal relative risk regression (using generalized causal poisson regression).
+When Y is nonnegative (e.g. binary or a count), the causal relative risk or causal relative treatment effect may be of interest. "spRR" implements causal relative risk regression (using generalized causal log-linear/poisson regression).
 
 The model used is the so-called "partially-linear relative risk/poisson regression model" which *only* assumes
 
