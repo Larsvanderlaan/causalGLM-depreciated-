@@ -144,7 +144,7 @@ Once this goal has been accomplished, my next goal is to have the not-so-long-sa
 
 To accomplish the second goal, I will be implementing "np" versions of the "sp" method that provide nonparametrically correct inference for parametric components of semiparametric models. These nonparametric methods treat the parametric specifications as working/approximate models (which are indeed useful) but allow for correct and interpretable estimates and inference even when the working parametric model is wrong.
 
-Joking aside, I will leave it to you to decide which version of the methods are best for the job.
+Joking aside, I will leave it to you to decide which version of the methods are best for the job. For completeness and comparison, I will also implement "p" versions of the functions, which are fully parametric.
  
 
 
