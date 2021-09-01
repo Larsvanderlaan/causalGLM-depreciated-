@@ -5,7 +5,7 @@
 \title{Semiparametric Targeted inference for the conditional odds ratio with outcome missingness.}
 \usage{
 spOR(
-  formula = ~1,
+  formula_logOR = ~1,
   W,
   A,
   Y,
@@ -33,7 +33,7 @@ spOR(
 )
 }
 \arguments{
-\item{formula}{An R formula object describing the functional form of the conditional log odds ratio as a fnction of `W`.
+\item{formula_logOR}{An R formula object describing the functional form of the conditional log odds ratio as a fnction of `W`.
 This corresponds with `f(W)` in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)`.}
 
 \item{W}{A named matrix of baseline covariates}

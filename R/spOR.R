@@ -9,7 +9,7 @@
 #'
 #' NOTE: For more robust nonparametrically correct inference with no parametric assumptions, use the function \link[npOR] instead. In the \link[npOR] function, the user-specified parametric model is instead treated as an approximation rather than the truth.
 #'
-#' @param formula An R formula object describing the functional form of the conditional log odds ratio as a fnction of `W`.
+#' @param formula_logOR An R formula object describing the functional form of the conditional log odds ratio as a fnction of `W`.
 #' This corresponds with `f(W)` in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)`.
 #' @param W A named matrix of baseline covariates
 #' @param A A binary vector with values in (0,1) encoding the treatment assignment
@@ -31,7 +31,8 @@
 #' By default, Lrnr_hal9001 is used.
 #' @importFrom doMC registerDoMC
 #' @export
-spOR <- function(formula = ~1, W, A, Y, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_learner_A = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    fit_Q0W_separate = F, boundsOR = c(1e-3, 1e3), ... ) {
+spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_learner_A = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    fit_Q0W_separate = F, boundsOR = c(1e-3, 1e3), ... ) {
+  formula <-  formula_logOR
   targeting_method <- match.arg(targeting_method)
   if(parallel) {
     doMC::registerDoMC(ncores)
