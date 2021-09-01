@@ -24,6 +24,8 @@ Outputs include:
 ### References:
 Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
 
+For machine-learnng, the package tlverse/hal9001 is used as default: https://github.com/tlverse/hal9001
+
 See also:
 
 Statistical Inference for Variable Importance, van der Laan (2006): https://biostats.bepress.com/ucbbiostat/paper188/
@@ -39,6 +41,9 @@ https://github.com/ck37/varimpact/tree/master/R
 
 https://academic.oup.com/bioinformatics/article/31/18/3054/241218
 https://cran.case.edu/web/packages/tmle.npvi/tmle.npvi.pdf
+
+For fully nonparametric ATE-type methods, see the tmle package: https://cran.r-project.org/web/packages/tmle/index.html
+Or tlverse/tmle3: https://tlverse.org
 
 ## Targeted learning for robust efficient inference with machine-learning
 
