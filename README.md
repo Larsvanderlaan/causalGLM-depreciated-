@@ -10,7 +10,7 @@ In this package, we utilize targeted machine-learning (TMLE) to generalize the p
 So far, this package supports:
 
 1. Conditional average treatment effect estimation with "spCATE". (Causal semiparametric linear regression with general link functions)
-2. Conditional odds ratio estimation between two binary variables with "spOR:. (Causal semiparametric logistic regression)
+2. Conditional odds ratio estimation between two binary variables with "spOR". (Causal semiparametric logistic regression)
 3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR":. (Causal semiparametric poisson/relative-risk regression with general link functions)
 
 The functions are easy to use. The only required input from users is the data (of course) and a R-formula object (just like glm) for the CATE/OR/RR.
