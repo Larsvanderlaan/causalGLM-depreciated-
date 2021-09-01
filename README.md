@@ -23,7 +23,7 @@ Outputs include:
 
  
 
-## Targeted learning for robust efficient inference with machine-learning
+## Targeted learning for robust efficient inference using machine-learning
 
 Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
 
