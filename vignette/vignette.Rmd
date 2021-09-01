@@ -203,7 +203,7 @@ summary(causal_fit)
 
 # More customization with main functions
 
-Using the below main functions, you can choose specific learners for A and Y and another specifications. 
+Using the below main functions, you can choose specific learners for A and Y and other specifications like custom link functions. 
 The input arguments are similar to the causalGLM function. Take a look at the documentation.
 
 ```{r}
