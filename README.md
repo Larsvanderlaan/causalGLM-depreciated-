@@ -1,6 +1,6 @@
 # causalGLM
 
-## Semiparametric generalized linear models for causal inference using targeted machine-learning (TMLE)
+## Semiparametric generalized linear models for causal inference using targeted machine-learning 
 
 Believe it or not, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models is dangerous. With even a little bit confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question.
 
@@ -121,7 +121,6 @@ lrnr_cross_fit <- make_learner(Pipeline, Lrnr_cv$new(), lrnr)
 
 Relevant reads:
 https://vanderlaan-lab.org/2019/12/24/cv-tmle-and-double-machine-learning/
-
 https://pubmed.ncbi.nlm.nih.gov/31742333/
 
 ## Need a new or specialized method?
