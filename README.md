@@ -1,2 +1,67 @@
 # CausalGLM
 Semiparametric generalized linear models for causal inference using targeted machine-learning
+
+Believe it or not, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models is dangerous. With even a little bit confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question.
+
+In this package, we utilize targeted machine-learning (TMLE) to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes. This method provides robust inference even when sample sizes are as small as 50-100. We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in all types of settings. 
+
+So far, this package supports:
+
+1. Conditional average treatment effect estimation with "spCATE". (Causal semiparametric linear regression with general link functions)
+2. Conditional odds ratio estimation between two binary variables with "spOR:. (Causal semiparametric logistic regression)
+3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR":. (Causal semiparametric poisson/relative-risk regression with general link functions)
+
+The functions are easy to use. The only required input from users is the data (of course) and a R-formula object (just like glm) for the CATE/OR/RR.
+
+Outputs include:
+1. Coefficient estimates
+2. Z-scores and p-values for coefficients
+3. 95% confidence intervals for coefficients
+4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
+
+## Data-structure
+All functions utilize the data-structure (W,A,Y) where
+1. "W = (W_1,W_2,W_3,...)" represents a vector of baseline variables/covariates/confounders for which to adjust (passed as a named matrix or data.frame)
+2. "A" represents a binary treatment or exposure assignment whose effect on the outcome we are interested in.
+3. "Y" is an arbitrary outcome.
+
+## Conditional average treatment effects (CATE) with "spCATE"
+"spCATE" implements causal linear regression for additive treatment effects.  
+The default model is the so-called "partially linear regression model" defined as
+E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is user-specified.
+Using the argument "formula_CATE", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3.
+
+Specifically, this functions only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.
+
+
+Useful models include:
+
+1. Constant CATE: formula_CATE = ~ 1
+This specifies a constant CATE and the function will return estimates and inference for a single coefficient which can be directly interpreted as the treatment effect.
+
+2. Effect modification and subgroup effects: formula_CATE = ~ 1 + W_1
+This specifies a CATE model with effect modification by the baseline variable W_1. Estimates and inference are returned for both the intercept and coefficient in front of W_1. This can be interpreted just like linear regression-based estimates are interpreted.
+
+3. Crazy 8 and Crazy CATE: formula_CATE = ~ 1 + W_1 + W_1*W_2 + poly(W_1, degree = 2, raw = T)
+Be crazy and parametric model the CATE to your hearts content. The above formula is equivalent to CATE(W) = a + b W_1 + c W_1*W_2 + d W_1^2
+
+No model is (or can or should) be assumed for E[Y|A=0,W]. This is estimated using default or user-specified machine-learning via sl3.
+By default, a theoretically understood, flexible, robust, sparsity and smoothness adapting smoothing spline is used to estimate this nonparametric component. Specifically, we employ the R package hal9001 which implements the highly adaptive lasso estimator (HAL). This allows you to focus all your energy and attention on making a good model for CATE. No need to worry about parts of the data distribution that don't matter for what you care about!
+
+If one wants to use a different link function for the CATE, you can pass a family object using the argument "family_CATE" (by default identity link). For example, if you want "formula_CATE = ~ 1 + W_1" to imply the exponential CATE model CATE(W) = exp(a + b * W_1) then use "family_CATE = poisson()".  
+
+
+## Conditional odds ratio (OR) with "spOR"
+When Y is binary, the adjusted causal odds ratio between A and Y may be of interest. "spOR" implements causal logistic regression for odds ratio estimation.
+The model used is the so-called "partially-linear logistic regression model" which *only* assumes
+
+logOR(W) := log[ {P(Y=1|A=1,W)/P(Y=0|A=1,W)} / {P(Y=1|A=0,W)/P(Y=0|A=0,W)} ] ~ user-specified parametric model.
+That is, the user specifies a parametric model for the log odds between A and Y and nothing else is assumed known.
+
+This is equivalent to assuming the logistic regression model
+P(Y=1|A,W) = expit{A*logOR(W) + logit(P(Y=1|A=0,W))}
+where P(Y=1|A=0,W) is unspecified and learned using machine-learning.
+
+Using the argument "formula_OR", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3.
+
+
