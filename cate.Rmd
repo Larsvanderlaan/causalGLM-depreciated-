@@ -24,9 +24,18 @@ setD <- set.DAG(D )
 n <- 1500
 data <- sim(setD, n = n)
 
-family <- binomial()
 
-family$mu.eta(2)
+
+fit <- glm.fit(data[,c("A", "W1", "W2")], data$Y, family = gaussian() )
+
+```
+
+
+```{r}
+
+summary(fit)
+
+
 
 ```
 

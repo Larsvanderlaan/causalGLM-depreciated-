@@ -15,7 +15,7 @@
 #' @param num_knots Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @param max_degree Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
-#'
+#' @export
 spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr_A = NULL, sl3_Lrnr_Y = NULL, weights = NULL,  smoothness_order = 1, max_degree = 2, num_knots = c(15,5), fit_control = list()){
   fit_separate <- !is.null(sl3_Lrnr_Y) || family_RR$family != "gaussian" || family_RR$link != "identity"
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order, num_knots = num_knots, max_degree = max_degree, fit_control = fit_control )

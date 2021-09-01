@@ -12,8 +12,7 @@ spCATE(
   Y,
   family_CATE = gaussian(),
   sl3_Lrnr_A = NULL,
-  sl3_Lrnr_Y_optional = NULL,
-  sl3_Lrnr_sigma = NULL,
+  sl3_Lrnr_Y = NULL,
   weights = NULL,
   smoothness_order_Y0W = 1,
   max_degree_Y0W = 2,
@@ -34,9 +33,7 @@ spCATE(
 
 \item{sl3_Lrnr_A}{An optional sl3-Learner object to estimate P(A=1|W)}
 
-\item{sl3_Lrnr_Y_optional}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]}
-
-\item{sl3_Lrnr_sigma}{An sl3-Learner object to estimate conditional variance (if outcome is non-binary)}
+\item{sl3_Lrnr_Y}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]}
 
 \item{weights}{A vector of optional weights.}
 
