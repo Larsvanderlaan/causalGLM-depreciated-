@@ -30,13 +30,13 @@ Targeted maximum likelihood estimation (TMLE) is a generalization of the well-kn
 TMLE dates back to 2000-2006 and is a state-of-the-art method for efficient semiparametric estimation and inference using machine-learning tools.
 
 
-## Data-structure
+### Data-structure
 All functions utilize the data-structure (W,A,Y) where
 1. "W = (W_1,W_2,W_3,...)" represents a vector of baseline variables/covariates/confounders for which to adjust (passed as a named matrix or data.frame)
 2. "A" represents a binary treatment or exposure assignment whose effect on the outcome we are interested in.
 3. "Y" is an arbitrary outcome.
 
-## Conditional average treatment effects (CATE) with "spCATE"
+### Conditional average treatment effects (CATE) with "spCATE"
 "spCATE" implements causal linear regression for additive treatment effects.  
 The default model is the so-called "partially linear regression model" defined as
 E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is user-specified.
@@ -62,7 +62,7 @@ By default, a theoretically understood, flexible, robust, sparsity and smoothnes
 If one wants to use a different link function for the CATE, you can pass a family object using the argument "family_CATE" (by default identity link). For example, if you want "formula_CATE = ~ 1 + W_1" to imply the exponential CATE model CATE(W) = exp(a + b * W_1) then use "family_CATE = poisson()".  
 
 
-## Conditional odds ratio (OR) with "spOR"
+### Conditional odds ratio (OR) with "spOR"
 When Y is binary, the adjusted causal odds ratio between A and Y may be of interest. "spOR" implements causal logistic regression for odds ratio estimation.
 The model used is the so-called "partially-linear logistic regression model" which *only* assumes
 
@@ -82,7 +82,7 @@ Useful models include:
 
 Machine-learning estimation is done just like "spCATE".
 
-## Conditional Relative Risk regression (RR) with "spRR"
+### Conditional Relative Risk regression (RR) with "spRR"
 When Y is nonnegative (e.g. binary or a count), the causal relative risk or causal relative treatment effect may be of interest. "spRR" implements causal relative risk regression (using generalized causal poisson regression).
 
 The model used is the so-called "partially-linear relative risk/poisson regression model" which *only* assumes
