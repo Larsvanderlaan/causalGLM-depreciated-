@@ -1,9 +1,11 @@
 # CausalGLM
-Semiparametric generalized linear models for causal inference using targeted machine-learning
+
+Semiparametric generalized linear models for causal inference using targeted machine-learning (TMLE)
 
 Believe it or not, it is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for causal answers, assuming parametric models is dangerous. With even a little bit confounding they can give remarkably incorrect answers. Rather than assuming a fully parametric model, instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question.
 
 In this package, we utilize targeted machine-learning (TMLE) to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes. This method provides robust inference even when sample sizes are as small as 50-100. We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in all types of settings. 
+
 
 So far, this package supports:
 
@@ -23,8 +25,9 @@ Outputs include:
 
 Targeted learning is a general framework for using machine-learning in real-world settings to estimate causal parameters and obtain efficient inference. Targeted learning works by first estimating the data-generating distribution and conditional mean functions using parametric or nonparametric black-box machine-learning, and then performing a targeted bias correction to obtain correct inference (targeted maximum likelihood estimation).
 
-Targeted maximum likelihood estimation is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures. Another name
+Targeted maximum likelihood estimation (TMLE) is a generalization of the well-known maximum likelihood estimation framework but it allows for inference even when using machine-learning and variable selection procedures. Another name for this package could be "targeted generalized linear models".
 
+TMLE dates back to 2000-2006 and is a state-of-the-art method for efficient semiparametric estimation and inference using machine-learning tools.
 
 
 ## Data-structure
@@ -102,5 +105,47 @@ Machine-learning estimation is done just like "spCATE".
 
 This function also supports general link functions using the "family_RR" argument in the same way as used in "spCATE".
 
+
+## Is this like double-machine-learning?
+Yes, but better! TMLE, unlike double-machine-learning and other estimation equation methods, is a substitution estimator and therefore respects all constraints of the statistical model. This leads to substantially improved finite-sample performance especially in real-world settings with model misspecification and positivity/imbalance issues.
+
+We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default robust machine-learning is performed so user specification is not necessary). 
+
+Example code:
+devtools::install_github("tlverse/sl3", ref="devel")
+library(sl3)
+lrnr <- Lrnr_glm$new()
+lrnr <- Lrnr_xgboost$new()
+lrnr <- Lrnr_gam$new()
+lrnr_cross_fit <- make_learner(Pipeline, Lrnr_cv$new(), lrnr)
+
+Relevant reads:
+https://vanderlaan-lab.org/2019/12/24/cv-tmle-and-double-machine-learning/
+
+https://pubmed.ncbi.nlm.nih.gov/31742333/
+
+## Need a new or specialized method?
+
+Any confusion? Questions? Don't know which method to use? None of the methods handle your problem? Need a custom/specialized method?
+
+Just send me a message. I would be happy to develop and implement a new method to add to this package.
+
+
+## Parametric, Semiparametric, Nonparametric models and future goals.
+
+Semiparametric models and estimation has been studied for a really long time by a lot of really smart people (Bickel et al., 1993). It is a rich field with numerous applications. The motivation of semiparametric models is to only assume a parametric model for what you care and know something about and leave the rest nonparametric. Amazingly, semiparametric models don't even come at a noticable loss in efficiency/power relative to their parametric counterparts. They provide estimates that are just as interpretable as those in parametric models (coefficients) but have substantially less bias. This is especially important in observational studies where incorrect parametric models can be extremely misleading (do a nice simulation with a couple confounding mechanisms (e.g. informative missingness). 
+
+One goal of this package is to have the long-said quote "parametric models are all wrong but some are useful" be rejected and replaced with 
+1. "Parametric models are all wrong and are all useless"
+2. "Semiparametric models are all wrong but some are useful".
+
+Once this goal has been accomplished, my next goal is to have the not-so-long-said quote "Semiparametric models are all wrong but some are useful" be rejected and replaced with 
+1. "Semiparametric models are all wrong and are all useless"
+2. "Nonparametric models are always correct and all of them are useful".
+
+To accomplish the second goal, I will be implementing "np" versions of the "sp" method that provide nonparametrically correct inference for parametric components of semiparametric models. These nonparametric methods treat the parametric specifications as working/approximate models (which are indeed useful) but allow for correct and interpretable estimates and inference even when the working parametric model is wrong.
+
+Joking aside, I will leave it to you to decide which version of the methods are best for the job.
+ 
 
 
