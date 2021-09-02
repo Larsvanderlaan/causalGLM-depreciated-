@@ -117,7 +117,7 @@ causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand
 
 ```
 
-Note this function can be unstable if RR = E[Y|A=1]/E[Y|A=0] is very large (e.g. E[Y|A=0] is very small). 
+Note this function can be unstable if RR = E[Y|A=1,W]/E[Y|A=0,W] is very large (e.g. E[Y|A=0,W] is very small). 
 
 
 # Custom machine learning with sl3
