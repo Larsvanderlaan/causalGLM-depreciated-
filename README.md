@@ -23,7 +23,7 @@ Simulations suggest:
 1. Robust finite sample performance even when sample size is as low as n = 50-100
 2. Robust performance with higher dimensional model specifications for the CATE/RR/OR
 3. Comparable estimator variance, power and confidence-interval width relative to parametric generalized linear models (glm) even with the significantly relaxed model assumptions
-4. Substantially outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings.
+4. Substantially outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings and at worst matching performance in other settings.
 
  
 
