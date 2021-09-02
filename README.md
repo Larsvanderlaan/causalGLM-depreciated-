@@ -1,6 +1,6 @@
 # causalGLM
 
-## Semiparametric generalized linear models for causal inference using targeted machine-learning 
+## Semiparametric generalized linear models for causal inference using targeted machine-learning in low and high dimensions
 
 It is possible to get robust and efficient inference for causal quantities using machine-learning. Specially in the search for answers to causal questions, assuming parametric models can be dangerous. With even a seemingly small amount of confounding and misspecificaton, they can give biased answers. One way of mitigating this challenge is to instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
 
@@ -15,7 +15,7 @@ This package supports the estimands:
 
 Noticable features supported:
 1. Efficient semiparametric inference
-2. High dimensional covariates
+2. High dimensional covariates (with the glmnet implementation of LASSO using the wrapper function causalGLMwithLASSO)
 3. General machine-learning tools with the tlverse/sl3 ecosystem
 4. Built-in machine-learning routines for diverse settings and immediate use.
 
@@ -40,6 +40,9 @@ Outputs include:
 2. Z-scores and p-values for coefficients
 3. 95% confidence intervals for coefficients
 4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
+
+#### User-friendly interface for high dimensional settings
+For high dimensional W, you can use the wrapper function "causalGLMwithLASSO" which runs "causalGLM" using the glmnet LASSO implementation. This allows for robust and fast estimation in high dimensional settings where conventional machine-learning algorithms may struggle. Cross-fitting can be performed to reduce bias.
 
  
 
