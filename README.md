@@ -123,7 +123,7 @@ This function also supports general link functions using the "family_RR" argumen
 
 
 ## Is this like double-machine-learning?
-Yes, but with additional properties. TMLE is a c and maximum-likelihood estimator and therefore respects the constraints of the statistical model and tries to listen to the data as much as possible. This can lead to substantially improved finite-sample performance especially in certain real-world settings with model misspecification and positivity/imbalance issues (Porter et al., 2012).
+Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects the constraints of the statistical model and tries to listen to the data as much as possible. This can lead to substantially improved finite-sample performance especially in certain real-world settings with model misspecification and positivity/imbalance issues (Porter et al., 2012).
 
 In addition, TMLE seems to provide robust estimates even when higher dimensional parametric models are chosen (even with d =4). In such settings, the higher dimensional estimating equations used in DML can in principle be unstable. One possible reason for this is that incompatibility of estimating equation solutions with the nuisance estimators becomes more pronounced as the number of equations grows, leading to additional finite sample variance. Since TMLE is a substitution estimator and uses robust maximum likelihood estimation, these are not issues for the methods implemented here. 
 
