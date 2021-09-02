@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## CATE estimation
 ```{r}
 set.seed(1500)
-data_list <- sim.CATE(500, 2)
+data_list <- sim.CATE(n=500, p=2)
 # Confounders
 W <- data_list$W
 # Binary treatment
@@ -117,8 +117,37 @@ causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand
 
 ```
 
-Note this function can be unstable if RR = E[Y|A=1,W]/E[Y|A=0,W] is very large (e.g. E[Y|A=0,W] is very small). 
+ 
 
+# Extractor functions and inference for predictions
+
+```{r}
+set.seed(1500)
+data_list <- sim.CATE(500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+trueCATE <- data_list$CATE
+print(trueCATE)
+formula_CATE <- ~ W1 + W2 + 1
+
+# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree or num_knots or parallel.
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y, learning_method = "glmnet", estimand = "CATE")
+# Summary presents the main outputs.
+summary(causal_fit)
+
+# Coef provides some more information like asymptotic standard error estimates.
+coef(causal_fit)
+
+# Predict can be used to obtain predictions of the trained CATE model and 95% confidence intervals. You can pass in a new W matrix to ge predictions at:
+predict(causal_fit, W[1:5,])
+# Linear predictor is the untransformed estimate  
+# Estimate is the CATE predictions (i.e. transformed estimate (in this case linear link))  
+# CI_left and CI_right are confidence intervals for the CATE estimate "estimate". P-values are also provided.
+```
 
 # Custom machine learning with sl3
 

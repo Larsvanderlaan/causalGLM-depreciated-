@@ -11,8 +11,8 @@ causalGLM(
   A,
   Y,
   estimand = c("CATE", "OR", "RR"),
-  learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),
-  cross_fit = TRUE,
+  learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"),
+  cross_fit = ifelse(ncol(W) >= 12, T, F),
   sl3_Learner = NULL,
   glm_formula_A = NULL,
   glm_formula_Y = NULL,
@@ -36,14 +36,31 @@ causalGLM(
 
 \item{Y}{n outcome variable (continuous, nonnegative or binary depending on method)}
 
+\item{estimand}{Estimand/parameter to estimate. Choices are:
+CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
+OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
+OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.}
+
 \item{learning_method}{Machine-learning method to use. This is overrided if argument \code{sl3_Learner} is provided. Options are:
 "autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001}
 "glm": Fit nuisances with parametric model. See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
 "glmnet": Learn using lasso with glmnet.
 "gam": Learn using generalized additive models with mgcv.
+"mars": Multivariate adaptive regression splines with \code{earth}.
+"ranger": Robust random-forests with the package \code{Ranger}
 "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.}
 
-\item{sl3_Learner}{A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.}
+\item{cross_fit}{Whether to cross-fit the initial estimator. This is always set to FALSE if argument \code{sl3_Learner} is provided.
+learning_method = AutoML (default) does use cross-fitting for computational reasons and due to it being unnecessary for HAL.
+learning_method = `xgboost` and `ranger` are always cross-fitted regardless of the value of \code{cross_fit}
+All other learning_methods are only cross-fitted if `cross_fit=TRUE`. 
+Note, it is not necessary to cross-fit glm, glmnet, gam or mars as long as the dimension of W is not too high.
+In smaller samples and lower dimensions, it may fact hurt to cross-fit.}
+
+\item{sl3_Learner}{A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.
+Note, \code{cross_fit} is automatically set to FALSE if this argument is provided. 
+If you wish to cross-fit the learner \code{sl3_Learner} then do: sl3_Learner <- Lrnr_cv$new(sl3_Learner).
+Cross-fitting is recommended for all tree-based algorithms like random-forests and gradient-boosting.}
 
 \item{glm_formula_A}{A glm formula for P(A=1|W). Only used if learning_method = "glm".}
 
@@ -62,11 +79,6 @@ causalGLM(
 \item{max_degree}{Max interaction degree for HAL (see \code{hal9001/fit_hal})}
 
 \item{num_knots}{Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.}
-
-\item{Estimand}{Estimand/parameter to estimate. Choices are:
-CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
-OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
-OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.}
 }
 \description{
 causalGLM

@@ -11,12 +11,23 @@
 #' "glm": Fit nuisances with parametric model. See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
 #' "glmnet": Learn using lasso with glmnet.
 #' "gam": Learn using generalized additive models with mgcv.
+#' "mars": Multivariate adaptive regression splines with \code{earth}.
+#' "ranger": Robust random-forests with the package \code{Ranger}
 #' "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.
-#' @param Estimand Estimand/parameter to estimate. Choices are:
+#' @param estimand Estimand/parameter to estimate. Choices are:
 #' CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.
+#' @param cross_fit Whether to cross-fit the initial estimator. This is always set to FALSE if argument \code{sl3_Learner} is provided.
+#'  learning_method = AutoML (default) does use cross-fitting for computational reasons and due to it being unnecessary for HAL.
+#'  learning_method = `xgboost` and `ranger` are always cross-fitted regardless of the value of \code{cross_fit}
+#'  All other learning_methods are only cross-fitted if `cross_fit=TRUE`. 
+#'  Note, it is not necessary to cross-fit glm, glmnet, gam or mars as long as the dimension of W is not too high.
+#'  In smaller samples and lower dimensions, it may fact hurt to cross-fit.  
 #' @param sl3_Learner A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.
+#' Note, \code{cross_fit} is automatically set to FALSE if this argument is provided. 
+#' If you wish to cross-fit the learner \code{sl3_Learner} then do: sl3_Learner <- Lrnr_cv$new(sl3_Learner).
+#' Cross-fitting is recommended for all tree-based algorithms like random-forests and gradient-boosting.
 #' @param glm_formula_A A glm formula for P(A=1|W). Only used if learning_method = "glm".
 #' @param glm_formula_Y A glm formula for E[Y|A,W]. Only used if learning_method = "glm".
 #' @param glm_formula_Y0W A glm formula for E[Y|A=0,W]. Only used if learning_method = "glm".
@@ -27,7 +38,7 @@
 #' @param max_degree Max interaction degree for HAL (see \code{hal9001/fit_hal})
 #' @param num_knots Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.
 #' @export
-causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "xgboost"),    cross_fit = TRUE,  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order = 1, max_degree = 2, num_knots = c(10,5) ){
+causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"),    cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order = 1, max_degree = 2, num_knots = c(10,5) ){
   inference_type =  "semiparametric"
   if(parallel & !is.null(ncores)) {
     doMC::registerDoMC(ncores)
@@ -58,11 +69,13 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       sl3_Learner <- Lrnr_gam$new()
     } else if(learning_method == "mars" ) {
       sl3_Learner <- Lrnr_earth$new()
+    } else if (learning_method == "ranger") {
+      sl3_Learner <- Lrnr_cv$new(Lrnr_ranger$new())
     } else if(learning_method == "xgboost" ) {
       sl3_Learner <- Stack$new( Lrnr_glmnet$new(), Lrnr_xgboost$new(max_depth =3), Lrnr_xgboost$new(max_depth =4), Lrnr_xgboost$new(max_depth =5), Lrnr_xgboost$new(max_depth =6), Lrnr_xgboost$new(max_depth =7))
       sl3_Learner <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
     }
-    if(cross_fit & learning_method %in% c("glm", "gam", "glmnet") ) {
+    if(cross_fit & learning_method %in% c("glm", "gam", "glmnet", "mars") ) {
       sl3_Learner <- Lrnr_cv$new(sl3_Learner)
     }
   }

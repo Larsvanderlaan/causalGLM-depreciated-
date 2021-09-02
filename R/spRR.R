@@ -19,12 +19,12 @@
 spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr_A = NULL, sl3_Lrnr_Y = NULL, weights = NULL,  smoothness_order = 1, max_degree = 2, num_knots = c(15,5), fit_control = list()){
   fit_separate <- !is.null(sl3_Lrnr_Y) || family_RR$family != "gaussian" || family_RR$link != "identity"
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order, num_knots = num_knots, max_degree = max_degree, fit_control = fit_control )
-
+  
   W <- as.matrix(W)
   A <- as.vector(A)
   Y <- as.vector(Y)
   n <- nrow(W)
-
+  
   if(is.null(weights)) {
     weights <- rep(1,n)
   }
@@ -35,15 +35,15 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   if(is.null(sl3_Lrnr_A)) {
     sl3_Lrnr_A <- default_learner
   }
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
   dat <-  as.data.frame(W)
   V <- model.matrix(formula_logRR , data = dat)
-
+  
   # Estimate g
   data_A <- data.frame(W, A = A, weights = weights)
   task_A <- sl3_Task$new(data_A, covariates = colnames(W), outcome = "A", weights= "weights")
@@ -51,26 +51,26 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   g1 <- sl3_Lrnr_A$predict(task_A)
   g1 <- bound(g1, 0.005)
   g0 <- 1- g1
-
-
+  
+  
   # Estimate part lin Q
-
-
-
+  
+  
+  
   data_Y <- data.frame(W, A = A, Y=Y, weights = weights)
   task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W), "A"), outcome = "Y" , weights= "weights")
   data_Y1 <- data.frame(W, A = 1, Y=Y, weights = weights)
   task_Y1 <- sl3_Task$new(data_Y1, covariates = c(colnames(W), "A"), outcome = "Y", weights= "weights")
   data_Y0 <- data.frame(W, A = 0, Y=Y, weights = weights)
   task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(W), "A"), outcome = "Y", weights= "weights")
-
+  
   sl3_Lrnr_Y <- sl3_Lrnr_Y$train(task_Y)
   Q <-  pmax(sl3_Lrnr_Y$predict(task_Y),0.01)
   Q1 <-  pmax(sl3_Lrnr_Y$predict(task_Y1),0.01)
   Q0 <-  pmax(sl3_Lrnr_Y$predict(task_Y0),0.01)
-
-
-
+  
+  
+  
   if(family_RR$family == "gaussian" & family_RR$link == "identity") {
     beta <- suppressWarnings(coef(glm.fit(V, Q1/Q0, family = poisson(), intercept = F)))
   } else {
@@ -82,13 +82,13 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
   Q0 <- pmax(as.vector(as.vector(Q0)),0.01)
   Q1 <- pmax(as.vector(Q0 * RR),0.01)
   Q <- as.vector(ifelse(A==1, Q1, Q0))
-   
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
   for(i in 1:100) {
     gradM <- family_RR$mu.eta(V%*%beta)*V
     mstar <- RR + (1-A)*1
@@ -96,9 +96,9 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
     denom <- RR * g1 + g0
     hstar <- - num/denom
     H <- (A*gradM  + hstar)
-
+    
     EIF <- weights *   as.matrix(H * (Y-Q))
-
+    
     linpred <- family_RR$linkfun(log(Q1/Q0))
     risk_function <- function(beta) {
       logQeps <- A*family_RR$linkinv(linpred + V%*%beta ) + log(Q0)+ hstar%*%beta
@@ -106,29 +106,29 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
       loss <- weights*loss
       mean(loss)
     }
-
-
+    
+    
     suppressWarnings(hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T)$hessian)
     scale <- hessian
-
-
+    
+    
     #print(as.data.frame(hessian))
-
+    
     #scale <- as.matrix(apply(gradM, 2, function(v) {colMeans_safe(weights*(A*gradM  + hstar) *  A*gradM * v /sigma2  )}) )
     #print(as.data.frame(scale))
     #stop("d")
     scaleinv <- solve(scale)
-
+    
     EIF <-  EIF %*%   scaleinv
-
-
+    
+    
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
     print(max(abs(scores)))
     if(max(abs(scores)) <= 1/n) {
       break
     }
-
+    
     linpred <- family_RR$linkfun(log(Q1/Q0))
     risk_function <- function(eps) {
       logQeps <- A*family_RR$linkinv(linpred + eps * V%*%direction_beta ) + log(Q0)+ eps * hstar%*%direction_beta
@@ -136,8 +136,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
       loss <- weights*loss
       mean(loss)
     }
-
-
+    
+    
     optim_fit <- optim(
       par = list(epsilon = 0.05), fn = risk_function,
       lower = 0, upper = 0.15,
@@ -149,19 +149,23 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(),  sl3_Lrnr
     Q1 <- pmax(RR*Q0, 0.01)
     Q <- ifelse(A==1, Q1, Q0)
     beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
-
+    
   }
-
+  
   est <- beta
-  se <- sqrt(diag(var(EIF)))
+  var_mat <- var(EIF)
+  
+  RR_linkinv <- function(x) {exp(family_RR$linkinv(x))}
+  
+  se <- sqrt(diag(var_mat ))
   Zvalue <- abs(sqrt(n) * est/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
-
+  
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
   out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
-  colnames(out) <- c("coef", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
   
-  output <- list(coefs = out, var_mat = var(EIF))
+  output <- list(coefs = out, var_mat = var(EIF), n=n,  formula = formula_logRR, linkinv = RR_linkinv, link_type = "Maps linear predictor to RR")
   class(output) <- c("spRR", "causalGLM")
   output
 }

@@ -94,7 +94,7 @@ D <- D +
 
 
 setD <- set.DAG(D )
-n <-  500
+n <-  50
 data <- sim(setD, n = n)
 
 
@@ -104,7 +104,7 @@ A <- data$A
 Y <- data$Y
 W <- as.matrix(data[,c("W1", "W2")])
 
-out <- spRR(formula_logRR = ~ 1, W, A, Y, family_RR = gaussian(), sl3_Lrnr_A = Lrnr_gam$new(), sl3_Lrnr_Y = Lrnr_gam$new(), smoothness_order = 1, max_degree = 2, num_knots = c(5,3), fit_control = list())
+out <- spRR(formula_logRR = ~ 1, W, A, Y, family_RR = gaussian(), sl3_Lrnr_A = Lrnr_glm$new(), sl3_Lrnr_Y = Lrnr_glm$new(), smoothness_order = 1, max_degree = 2, num_knots = c(1,1), fit_control = list())
 print(out)
 passes <- cbind(passes, out[,5] <= log(2)  & out[,6] >= log(2) )
 print(rowMeans(passes))
@@ -114,34 +114,44 @@ print(rowMeans(passes))
 
 
 ```{r}
-passes <- c()
-for(i in 1:100) {
+ passes <- c()
+ passes1 <- c()
+for(i in 1:1) {
   print(i)
   D <- DAG.empty()
 
 D <- D +
   node("W1", distr = "runif", min = -1, max = 1) +
   node("W2", distr = "runif", min = -1, max = 1) +
-  node("A", distr = "rbinom", size = 1, prob = plogis(0.7*(W1 + W2 ) ))+
-  node("mu", distr = "rconst", const =   (1+W1)*A*0.25 + (W1 + W2)) +
-  node("Y", distr = "rnorm", mean = mu, sd = 0.2) 
+  node("W3", distr = "runif", min = -1, max = 1) +
+  node("W4", distr = "runif", min = -1, max = 1) +
+  node("A", distr = "rbinom", size = 1, prob = plogis( (W1 + W2   ) )) +
+  node("mu", distr = "rconst", const =   (1 + W1 + W2 + W3 + W4)*A*0.5 + (W1 + W2  + W3 + W4  )) +
+  node("Y", distr = "rnorm", mean = mu, sd = 2) 
 
 
 setD <- set.DAG(D )
-n <- 2500
+n <-   70
 data <- sim(setD, n = n)
 
-
+doMC::registerDoMC(1)
 
   
 A <- data$A
 Y <- data$Y
-W <- as.matrix(data[,c("W1", "W2")])
+W <- as.matrix(data[,c("W1", "W2", "W3", "W4")])
 
-out <- spCATE(formula_CATE = ~ W1+1, W, A, Y, family_CATE = gaussian(), sl3_Lrnr_A = Lrnr_glm$new(), sl3_Lrnr_Y_optional = NULL, sl3_Lrnr_sigma = Lrnr_glm$new(),  smoothness_order_Y0W = 1, max_degree_Y0W = 1, num_knots_Y0W = 10, fit_control = list())
-
-passes <- cbind(passes, out[,5] <= 0.25  & out[,6] >= 0.25 )
+out <- spCATE(formula_CATE = ~ 1 + W1 + W2 + W3 + W4, W, A, Y, family_CATE = gaussian(), sl3_Lrnr_A = Lrnr_earth$new(), sl3_Lrnr_Y  = Lrnr_earth$new(), constant_variance = T,smoothness_order_Y0W = 1, max_degree_Y0W = 1, num_knots_Y0W = c(1,1 ), fit_control = list( parallel  = T)  )
+out1 <- out$coefs1
+out <- out$coefs
+ cate <- 0.5
+passes <- cbind(passes, out[,4] <= cate  & out[,5] >= cate )
 print(rowMeans(passes))
+
+out <- out1
+ 
+passes1 <- cbind(passes1, out[,4] <= cate  & out[,5] >= cate )
+print(rowMeans(passes1))
 }
 
 ```

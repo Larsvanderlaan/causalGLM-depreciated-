@@ -314,9 +314,9 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
   Zvalue <- abs(sqrt(n) * estimates/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
   ci <- cbind(estimates,   se/sqrt(n), se ,estimates - 1.96*se/sqrt(n), estimates + 1.96*se/sqrt(n), Zvalue, pvalue)
-  colnames(ci) <- c("coefs",   "se/sqrt(n)", "se","lower_CI", "upper_CI", "Z-value", "p-value")
+  colnames(ci) <- c("coefs",   "se/sqrt(n)", "se","CI_left", "CI_right", "Z-value", "p-value")
   #output <- list(coefs = ci, var_mat = var_scaled, logOR_at_W_new = preds_new, pred_function = compute_predictions,   learner_fits = list(A = fit_A, Y = fit_Y), converged_flag = converged_flag)
-  output <- list(coefs = ci, var_mat = var_scaled, pred_function = compute_predictions)
+  output <- list(coefs = ci, var_mat = var_scaled, n = n, formula = formula,   linkinv = exp, link_type = "Maps linear predictor to OR")
   
   class(output) <- c("spOR", "causalGLM")
   return(output)

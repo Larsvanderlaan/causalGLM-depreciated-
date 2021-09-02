@@ -17,7 +17,7 @@
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #'
 #' @export
-spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_Lrnr_A = NULL, sl3_Lrnr_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
+spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), constant_variance = FALSE,  sl3_Lrnr_A = NULL, sl3_Lrnr_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
   fit_separate <- !is.null(sl3_Lrnr_Y) || family_CATE$family != "gaussian" || family_CATE$link != "identity"
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
 
@@ -97,32 +97,58 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_L
     sigma21 <- Q1*(1-Q1)
     sigma20 <- Q0*(1-Q0)
   } else {
-    X <- cbind(W,A)
-    X0 <- cbind(W,rep(0,n))
-    X1 <- cbind(W,rep(1,n))
-    fit_Y <- fit_hal(X = X, , Y = (Y - Q)^2, family = "poisson", fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
-    sigma2 <- predict(fit_Y, new_data =X)
-    sigma20 <- predict(fit_Y, new_data = X0)
-    sigma21 <- predict(fit_Y, new_data = X1)
-
-    # data_sigma <- data.frame(W, A = A, Y=(Y-Q)^2, weights = weights)
-    # task_sigma <- sl3_Task$new(data_sigma, covariates = c(colnames(W), "A"), outcome = "Y", weights = "weights")
-    # data_sigma1 <- data.frame(W, A = 1, Y=(Y-Q)^2, weights = weights)
-    # task_sigma1 <- sl3_Task$new(data_sigma1, covariates = c(colnames(W), "A"), outcome = "Y", weights = "weights")
-    # data_sigma0 <- data.frame(W, A = 0, Y=(Y-Q)^2, weights = weights)
-    # task_sigma0 <- sl3_Task$new(data_sigma0, covariates = c(colnames(W), "A"), outcome = "Y", weights = "weights")
-    #
-    # sl3_Lrnr_sigma <- sl3_Lrnr_sigma$train(task_sigma)
-    # sigma2 <- sl3_Lrnr_sigma$predict(task_sigma)
-    # sigma21 <- sl3_Lrnr_sigma$predict(task_sigma1)
-    # sigma20 <- sl3_Lrnr_sigma$predict(task_sigma0)
-    #sigma2 <- EY2 - Q^2
-    #sigma20 <- EY2_0 - Q0^2
-    #sigma21 <- EY2_1 - Q1^2
+    if(constant_variance) {
+      sigma2 <- mean((Y - Q)^2)
+      sigma2 <- rep(sigma2, n)
+      sigma21 <- mean((Y - Q1)^2)
+      sigma21 <- sigma2
+      sigma20 <- mean((Y - Q0)^2)
+      sigma20 <- sigma2
+      
+    } else {
+      X <- cbind(W,A)
+      X0 <- cbind(W,rep(0,n))
+      X1 <- cbind(W,rep(1,n))
+      fit_Y <- fit_hal(X = X, , Y = (Y - Q)^2, family = "poisson", fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
+      sigma2 <- predict(fit_Y, new_data =X)
+      sigma20 <- predict(fit_Y, new_data = X0)
+      sigma21 <- predict(fit_Y, new_data = X1)
+    }
+    
   }
 
 
-
+  #one_step <- mean((A-g1)*(Y-Q0))/ mean((A-g1)*A)
+  
+  
+  
+   
+  
+  
+  risk_function <- function(beta) {
+    gradM <- family_CATE$mu.eta(V%*%beta)*V
+    num <- gradM * ( g1/sigma21)
+    denom <- (g0/ sigma20 + g1/sigma21)
+    hstar <- - num/denom
+    H <- (A*gradM  + hstar) /sigma2
+    EIF <- weights * as.matrix(H * (Y -  A*as.vector(V%*%beta) - Q0))
+    sds <- apply(EIF,2,sd)
+    sds <- 1/sds
+    sds <- sds/sum(sds)
+    
+    
+    (sum(sds*(colMeans(EIF)^2)))
+  }
+   (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
+   print(one_step$value)
+  one_step <- one_step$par
+    
+  
+  
+  
+  
+  
+  
   for(i in 1:100) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
 
@@ -152,7 +178,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_L
 
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
-    print(max(abs(scores)))
+     
     if(max(abs(scores)) <= 1/n) {
       break
     }
@@ -178,6 +204,8 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_L
     Q1 <- as.vector(CATE + Q0)
   }
 
+  linkinv <- family_CATE$linkinv
+  
   est <- beta
   se <- sqrt(diag(var(EIF)))
   Zvalue <- abs(sqrt(n) * est/se)
@@ -185,8 +213,18 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(),  sl3_L
 
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
   out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
-  colnames(out) <- c("coef", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
-  output <- (list(coefs = out, var_mat = var(EIF)))
+  colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  output <- list(coefs = out, var_mat = var(EIF), n=n, formula = formula_CATE, linkinv = linkinv, link_type = "Maps linear predictor to CATE")
   class(output) <- c("spCATE", "causalGLM")
+  
+  est <- one_step
+  se <- sqrt(diag(var(EIF)))
+  Zvalue <- abs(sqrt(n) * est/se)
+  pvalue <- signif(2*(1-pnorm(Zvalue)),5)
+  ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
+  out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
+  colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  output$coefs1 <- out
   output
+   
 }

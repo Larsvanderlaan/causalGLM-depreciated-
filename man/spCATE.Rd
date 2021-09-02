@@ -11,6 +11,7 @@ spCATE(
   A,
   Y,
   family_CATE = gaussian(),
+  constant_variance = FALSE,
   sl3_Lrnr_A = NULL,
   sl3_Lrnr_Y = NULL,
   weights = NULL,
