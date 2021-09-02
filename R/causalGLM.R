@@ -1,7 +1,7 @@
  
 #' causalGLM
 #' A default and more user-friendly front-end of the implemented methods.
-#' 
+#' Supports conditional average treatment effect (CATE), conditional odds ratio (OR), and conditional relative risk (RR) estimation.
 #' @param formula A R formula object specifying the parametric form of CATE, OR, or RR (depending on method).
 #' @param W A named matrix or data.frame of baseline covariates to condition on.
 #' @param A A binary treatment assignment vector

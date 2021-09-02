@@ -3,7 +3,8 @@
 \name{causalGLM}
 \alias{causalGLM}
 \title{causalGLM
-A default and more user-friendly front-end of the implemented methods.}
+A default and more user-friendly front-end of the implemented methods.
+Supports conditional average treatment effect (CATE), conditional odds ratio (OR), and conditional relative risk (RR) estimation.}
 \usage{
 causalGLM(
   formula,
@@ -85,4 +86,5 @@ Cross-fitting is recommended for all tree-based algorithms like random-forests a
 \description{
 causalGLM
 A default and more user-friendly front-end of the implemented methods.
+Supports conditional average treatment effect (CATE), conditional odds ratio (OR), and conditional relative risk (RR) estimation.
 }
