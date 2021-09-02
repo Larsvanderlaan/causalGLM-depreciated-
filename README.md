@@ -17,7 +17,7 @@ Noticable features supported:
 1. Efficient semiparametric inference
 2. High dimensional covariates
 3. General machine-learning tools with the tlverse/sl3 ecosystem
-4. Prebuilt in machine-learning routines for diverse settings and immediate use.
+4. Built-in machine-learning routines for diverse settings and immediate use.
 
 Simulations suggest:
 1. Robust finite sample performance even when sample size is as low as n = 50-100
