@@ -37,8 +37,10 @@
 #' @param smoothness_order Smoothness order for HAL (see \code{hal9001/fit_hal})
 #' @param max_degree Max interaction degree for HAL (see \code{hal9001/fit_hal})
 #' @param num_knots Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.
+#' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
 #' @export
-causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"),    cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order = 1, max_degree = 2, num_knots = c(10,5) ){
+causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"),    cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner = NULL, glm_formula_A = NULL, glm_formula_Y = NULL, glm_formula_Y0W = glm_formula_Y, weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order = 1, max_degree = ifelse( nrow(W) <= 100 || ncol(W) >= 20, 1, 2), num_knots = c(ifelse(nrow(W) <= 150, 1, 10),ifelse(nrow(W) <= 150, 1,5)) ){
+  
   inference_type =  "semiparametric"
   if(parallel & !is.null(ncores)) {
     doMC::registerDoMC(ncores)
@@ -106,6 +108,32 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   
     
   
+}
+
+
+
+
+#' causalGLMwithLASSO
+#' causalGLM in high dimensions. A wrapper for causalGLM with main-term \code{glmnet}/LASSO as base learner. 
+#' This method is useful for high dimensional settings where other learners are slow or poorly behaved.
+#' It may also be useful for smaller sample sizes where other machine-learning algorithms may overfit.
+#' Otherwise, we do not recommend using this function for lower dimensional settings since glmnet can be mispecified.
+#' 
+#' @param formula A R formula object specifying the parametric form of CATE, OR, or RR (depending on method).
+#' @param W A named matrix or data.frame of baseline covariates to condition on.
+#' @param A A binary treatment assignment vector
+#' @param Y n outcome variable (continuous, nonnegative or binary depending on method)
+#' @param estimand Estimand/parameter to estimate. Choices are:
+#' CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
+#' OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
+#' OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.
+#' @param cross_fit Whether to cross-fit the initial estimator. By default, TRUE. 
+#' In lower dimensions, we recommend setting this to FALSE.
+#' @param weights An optional vector of weights to use in procedure.
+#' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
+#' @export
+causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL  )  {
+  causalGLM(formula, W, A, Y, estimand, learning_method = "glmnet", cross_fit = cross_fit, weights = weights, num_knots = 1, max_degree =1, data_list = data_list  )
 }
 
 

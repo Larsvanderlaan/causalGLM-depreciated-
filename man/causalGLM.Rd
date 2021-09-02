@@ -23,8 +23,8 @@ causalGLM(
   parallel = F,
   ncores = NULL,
   smoothness_order = 1,
-  max_degree = 2,
-  num_knots = c(10, 5)
+  max_degree = ifelse(nrow(W) <= 100 || ncol(W) >= 20, 1, 2),
+  num_knots = c(ifelse(nrow(W) <= 150, 1, 10), ifelse(nrow(W) <= 150, 1, 5))
 )
 }
 \arguments{
@@ -69,6 +69,8 @@ Cross-fitting is recommended for all tree-based algorithms like random-forests a
 \item{glm_formula_Y0W}{A glm formula for E[Y|A=0,W]. Only used if learning_method = "glm".}
 
 \item{weights}{An optional vector of weights to use in procedure.}
+
+\item{data_list}{A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])}
 
 \item{parallel}{Whether to parallize HAL whenever it is used in fitting.}
 
