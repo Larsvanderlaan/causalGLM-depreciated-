@@ -13,10 +13,11 @@ This package supports the estimands:
 2. Conditional odds ratio estimation between two binary variables with "spOR". (Causal semiparametric logistic regression)
 3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric log-linear relative-risk regression with general link functions)
 
-Also supports:
-1. High dimensional covariates
-2. General machine-learning tools with the tlverse/sl3 ecosystem
-3. Prebuilt in machine-learning routines for diverse settings and immediate use.
+Noticable features supported:
+1. Efficient semiparametric inference
+2. High dimensional covariates
+3. General machine-learning tools with the tlverse/sl3 ecosystem
+4. Prebuilt in machine-learning routines for diverse settings and immediate use.
 
 Simulations suggest:
 1. Robust finite sample performance even when sample size is as low as n = 50-100
