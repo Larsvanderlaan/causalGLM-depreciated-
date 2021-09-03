@@ -123,7 +123,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   ################################################################################################
   #### Learn P(Y=1|A,X) under partially linear logistic model assumption #########################
   ################################################################################################
-  print(sl3_Learner_Y0W)
+ 
   if(!is.null(sl3_Learner_Y0W)) {
     
     if(!pool_A_when_training ) {
@@ -162,7 +162,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   } else if(is.null(glm_formula_Y0W)){
     # If no formula use HAL and respect model constraints.
     
-    print("here")
+   
     
     weight_tmp <- weights
     
@@ -207,8 +207,8 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   
    
   #### Do some model-compatible bounding of Q0
-  Q0 <- as.vector(bound(Q0, 0.0025))
-  Q1 <- as.vector(bound(Q1, 0.0025))
+  Q0 <- as.vector(bound(Q0, 0.005))
+  Q1 <- as.vector(bound(Q1, 0.005))
   denom <- pmax((1-Q1)*(Q0), 1e-8)
   num <- Q1*(1-Q0)
   OR <- num/denom
@@ -252,8 +252,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
     scale_inv <- solve(scale)
     
     score <- max(abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
-    print(score)
-    print(i)
+    
     if(abs(score) <= 1/n || abs(score) <= min(0.5,0.5*min(sqrt(diag(var_scaled_init))))/sqrt(n)/log(n)){
       converged_flag <- TRUE
       break

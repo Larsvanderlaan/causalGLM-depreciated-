@@ -17,6 +17,7 @@ causalGLMwithLASSO(
   cross_fit = TRUE,
   weights = NULL,
   data_list = NULL,
+  constant_variance_CATE = FALSE,
   ...
 )
 }

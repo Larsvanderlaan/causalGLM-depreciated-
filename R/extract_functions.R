@@ -1,15 +1,19 @@
 #' @export
 summary.causalGLM <- function(object) {
-  print(object$coefs[,c(1,6,4,5,7)])
+  print(object$coefs[,c(1,6,4,5,7), drop = F])
   if(!is.null(object$ATE)) {
-    print(object$ATE[,c(1,6,4,5,7)])
+    print(object$ATE[,c(1,6,4,5,7), drop = F])
   }
-  return(invisible(object$coefs[,c(1,6,4,5,7)]))
+  return(invisible(object$coefs[,c(1,6,4,5,7), drop = F]))
 }
 
 #' @export
 coef.causalGLM<- function(object) {
-  (object$coefs)
+  out <- (object$coefs)
+  if(is.vector(out)) {
+    out <- matrix(out, nrow=1)
+  }
+  out
 }
 
 

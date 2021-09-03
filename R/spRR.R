@@ -57,7 +57,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   # Estimate part lin Q
   
-  
+  print(range(Y))
   if(is.null(sl3_Learner_Y)) {
      
     fit_control$weights <- weights
@@ -118,7 +118,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   
   
-  for(i in 1:100) {
+  for(i in 1:200) {
     gradM <- family_RR$mu.eta(V%*%beta)*V
     
     mstar <- RR + (1-A)*1

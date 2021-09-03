@@ -4,7 +4,18 @@
 \alias{sim.CATE}
 \title{Simulate a dataset with known constant CATE}
 \usage{
-sim.CATE(n = 1500, p = 2, prop_active = 1)
+sim.CATE(
+  n = 1500,
+  p = 2,
+  prop_active = 1,
+  sigma = NULL,
+  formula_estimand = ~1,
+  formula_A = ~.,
+  formula_Y0W = ~.,
+  beta = NULL,
+  beta_A = NULL,
+  beta_Y = NULL
+)
 }
 \arguments{
 \item{n}{Sample size}

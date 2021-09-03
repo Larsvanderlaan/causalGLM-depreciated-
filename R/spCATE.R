@@ -17,7 +17,7 @@
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #'
 #' @export
-spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  return_ATE = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
+spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  return_ATE = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), max_degree_sigma =1, num_knots_sigma = ifelse(ncol(W)>=25, 1, 10), fit_control = list()){
    
   fit_separate <- !pool_A_when_training  
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
@@ -142,10 +142,10 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
       sigma20 <- sigma2
       
     } else {
-      X <- cbind(W,A)
-      X0 <- cbind(W,rep(0,n))
-      X1 <- cbind(W,rep(1,n))
-      fit_Y <- fit_hal(X = X, , Y = (Y - Q)^2, family = "poisson", fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
+      X <- cbind(W,A, A*W)
+      X0 <- cbind(W,rep(0,n), 0*W)
+      X1 <- cbind(W,rep(1,n), W)
+      fit_Y <- fit_hal(X = X, , Y = (Y - Q)^2, family = "poisson", fit_control = fit_control, smoothness_orders = 1, max_degree = max_degree_sigma, num_knots = num_knots_sigma)
       sigma2 <- predict(fit_Y, new_data =X)
       sigma20 <- predict(fit_Y, new_data = X0)
       sigma21 <- predict(fit_Y, new_data = X1)
@@ -185,7 +185,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   
   
  
-  for(i in 1:100) {
+  for(i in 1:200) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
 
     num <- gradM * ( g1/sigma21)

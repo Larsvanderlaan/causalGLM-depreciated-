@@ -8,13 +8,14 @@
 #' @param A A binary treatment assignment vector
 #' @param Y n outcome variable (continuous, nonnegative or binary depending on method)
 #' @param learning_method Machine-learning method to use. This is overrided if argument \code{sl3_Learner} is provided. Options are:
-#' "autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001}
-#' "glm": Fit nuisances with parametric model. See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
-#' "glmnet": Learn using lasso with glmnet.
-#' "gam": Learn using generalized additive models with mgcv.
-#' "mars": Multivariate adaptive regression splines with \code{earth}.
-#' "ranger": Robust random-forests with the package \code{Ranger}
-#' "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.
+#' "autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001} Good for most sample sizes when propertly tuned. See arguments \code{max_degree_Y0W} and \code{num_knots_Y0W}.
+#' "glm": Fit nuisances with parametric model. Best for smaller sample sizes (e.g. n =30-100). See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
+#' "glmnet": Learn using lasso with glmnet. Best for smaller sample sizes (e.g. n =30-100)
+#' "gam": Learn using generalized additive models with mgcv. Good for small-to-medium-small sample sizes.
+#' "mars": Multivariate adaptive regression splines with \code{earth}. Good for small-to-medium-small sample sizes.
+#' "ranger": Robust random-forests with the package \code{Ranger} Good for medium-to-large sample sizes.
+#' "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7. Good for medium-to-large sample sizes.
+#' We recommend performing simulations checking 95% CI coverage when choosing learners (especially in smaller sample sizes).
 #' @param pool_A_when_training Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 #' Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
 #' Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
@@ -62,8 +63,9 @@
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
 #' @param ... Other arguments to pass to main routine (spCATE, spOR, spRR) 
 #' @export
-causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL,  fast_analysis = TRUE, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 350, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1),... ){
+causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 200, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1), constant_variance_CATE = FALSE, ... ){
   smoothness_order_Y0W <- smoothness_order_Y0W[1]
+  fast_analysis = TRUE
   if(!(smoothness_order_Y0W %in% c(0,1))) {
     stop("smoothness_order_Y0W must be 0 or 1.")
   }
@@ -159,7 +161,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   }
   if(inference_type == "semiparametric") {
     if(estimand == "CATE") {
-      return(spCATE(formula_CATE =  formula, W, A, Y, pool_A_when_training = pool_A_when_training,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...))
+      return(spCATE(formula_CATE =  formula, W, A, Y, pool_A_when_training = pool_A_when_training,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel), constant_variance = constant_variance_CATE , ...))
     }
     if(estimand == "OR") {
       return(spOR(formula_logOR = formula, W, A, Y,  pool_A_when_training = pool_A_when_training, weights = weights, W_new = W,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y0W = sl3_Learner_Y0W,  glm_formula_Y0W = glm_formula_Y0W, smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W, reduce_basis = 1e-3, fit_control = list(parallel = parallel), sl3_learner_default = sl3_Learner_Y0W ,... ))
@@ -193,7 +195,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
 #' @param ... Other arguments to pass to glmnet (NOTE: this use is different than that of \code{causalGLM})
 #' @export
-causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL,...  )  {
+causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL, constant_variance_CATE = FALSE, ...  )  {
   V <- model.matrix(formula, as.data.frame(W))
   penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
   
@@ -206,12 +208,12 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
   if(cross_fit) {
     lrnr <- Lrnr_cv$new(lrnr)
   }
-  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list  )
+  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE )
 }
 
 
 
-
+ 
 
 #'  
 autoML <- function(n, p, parallel = F, fast_analysis = F, family = NULL) {

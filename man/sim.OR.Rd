@@ -4,7 +4,17 @@
 \alias{sim.OR}
 \title{Simulate a dataset with known constant OR}
 \usage{
-sim.OR(n = 1500, p = 2, prop_active = 1)
+sim.OR(
+  n = 1500,
+  p = 2,
+  prop_active = 1,
+  formula_estimand = ~1,
+  formula_A = ~.,
+  formula_Y0W = ~.,
+  beta = NULL,
+  beta_A = NULL,
+  beta_Y = NULL
+)
 }
 \arguments{
 \item{n}{Sample size}

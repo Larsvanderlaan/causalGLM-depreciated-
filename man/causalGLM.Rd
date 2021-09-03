@@ -22,12 +22,12 @@ causalGLM(
   glm_formula_Y = NULL,
   weights = NULL,
   data_list = NULL,
-  fast_analysis = TRUE,
   parallel = F,
   ncores = NULL,
   smoothness_order_Y0W = 1,
-  max_degree_Y0W = ifelse(nrow(W) >= 350, 2, 1),
+  max_degree_Y0W = ifelse(nrow(W) >= 200, 2, 1),
   num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10), 5, 1),
+  constant_variance_CATE = FALSE,
   ...
 )
 }
@@ -46,13 +46,14 @@ OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies param
 OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.}
 
 \item{learning_method}{Machine-learning method to use. This is overrided if argument \code{sl3_Learner} is provided. Options are:
-"autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001}
-"glm": Fit nuisances with parametric model. See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
-"glmnet": Learn using lasso with glmnet.
-"gam": Learn using generalized additive models with mgcv.
-"mars": Multivariate adaptive regression splines with \code{earth}.
-"ranger": Robust random-forests with the package \code{Ranger}
-"xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.}
+"autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001} Good for most sample sizes when propertly tuned. See arguments \code{max_degree_Y0W} and \code{num_knots_Y0W}.
+"glm": Fit nuisances with parametric model. Best for smaller sample sizes (e.g. n =30-100). See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
+"glmnet": Learn using lasso with glmnet. Best for smaller sample sizes (e.g. n =30-100)
+"gam": Learn using generalized additive models with mgcv. Good for small-to-medium-small sample sizes.
+"mars": Multivariate adaptive regression splines with \code{earth}. Good for small-to-medium-small sample sizes.
+"ranger": Robust random-forests with the package \code{Ranger} Good for medium-to-large sample sizes.
+"xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7. Good for medium-to-large sample sizes.
+We recommend performing simulations checking 95% CI coverage when choosing learners (especially in smaller sample sizes).}
 
 \item{pool_A_when_training}{Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
