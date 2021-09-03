@@ -57,7 +57,8 @@ Otherwise this is a boolean for whether to estimate the conditional mean/regress
 Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
 When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner is cbind(W,A*V) where V is the design matrix specified by the argument \code{formula}.
 Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
-For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.}
+For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.
+In high dimensions, pool_A_when_training = FALSE may be preferred to prevent dilution of the treatment interactions in the fitting.}
 
 \item{cross_fit}{Whether to cross-fit the initial estimator. This is always set to FALSE if argument \code{sl3_Learner} is provided.
 learning_method = AutoML (default) does use cross-fitting for computational reasons and due to it being unnecessary for HAL.

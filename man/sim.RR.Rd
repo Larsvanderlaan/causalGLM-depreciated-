@@ -4,12 +4,14 @@
 \alias{sim.RR}
 \title{Simulate a dataset with known constant RR}
 \usage{
-sim.RR(n = 1500, p = 2)
+sim.RR(n = 1500, p = 2, prop_active = 1)
 }
 \arguments{
 \item{n}{Sample size}
 
 \item{p}{Dimension of W}
+
+\item{prop_active}{Proportion of active (nonzero coef) variables}
 }
 \description{
 Simulate a dataset with known constant RR

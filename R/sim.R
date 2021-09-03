@@ -3,13 +3,16 @@
 #' @export
 #' @param n Sample size
 #' @param p Dimension of W
-sim.CATE <- function(n=1500, p=2) {
+#' @param prop_active Proportion of active (nonzero coef) variables
+sim.CATE <- function(n=1500, p=2, prop_active = 1) {
   W <- as.matrix(replicate(p, runif(n, -1,1)))
   colnames(W) <- paste0("W", 1:p)
+  active <- rbinom(p, size = 1, prob =prop_active)
+  
   betaA <- rnorm(p)
-  betaA <- 1.5 * betaA / sum(betaA)
+  betaA <- 1.5 * betaA * active / sum(betaA*active)
   betaY <- rnorm(p)
-  betaY <- 2 * betaY / sum(betaY)
+  betaY <- 2 * betaY*active / sum(betaY*active)
   names(betaA) <- colnames(W)
   names(betaY) <- colnames(betaY)
   g1 <- plogis( W %*% betaA)
@@ -30,13 +33,16 @@ sim.CATE <- function(n=1500, p=2) {
 #' @export
 #' @param n Sample size
 #' @param p Dimension of W
-sim.RR <- function(n=1500, p=2) {
+#' @param prop_active Proportion of active (nonzero coef) variables
+sim.RR <- function(n=1500, p=2, prop_active = 1) {
   W <- as.matrix(replicate(p, runif(n, -1,1)))
   colnames(W) <- paste0("W", 1:p)
+  active <- rbinom(p, size = 1, prob =prop_active)
+  
   betaA <- rnorm(p)
-  betaA <- 1.5 * betaA / sum(betaA)
+  betaA <- 1.5 * betaA * active / sum(betaA*active)
   betaY <- rnorm(p)
-  betaY <- 1 * betaY / sum(betaY)
+  betaY <- 1 * betaY*active / sum(betaY*active)
   names(betaA) <- colnames(W)
   names(betaY) <- colnames(betaY)
   
@@ -56,13 +62,15 @@ sim.RR <- function(n=1500, p=2) {
 #' @export
 #' @param n Sample size
 #' @param p Dimension of W
-sim.OR <- function(n=1500, p=2) {
+#' @param prop_active Proportion of active (nonzero coef) variables
+sim.OR <- function(n=1500, p=2, prop_active = 1) {
   W <- as.matrix(replicate(p, runif(n, -1,1)))
   colnames(W) <- paste0("W", 1:p)
+  active <- rbinom(p, size = 1, prob =prop_active)
   betaA <- rnorm(p)
-  betaA <-   betaA / sum(betaA)
+  betaA <- 1.5 * betaA * active / sum(betaA*active)
   betaY <- rnorm(p)
-  betaY <-   betaY / sum(betaY)
+  betaY <- 1.5 * betaY*active / sum(betaY*active)
   names(betaA) <- colnames(W)
   names(betaY) <- colnames(betaY)
   g1 <- plogis( W %*% betaA)

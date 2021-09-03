@@ -4,12 +4,14 @@
 \alias{sim.CATE}
 \title{Simulate a dataset with known constant CATE}
 \usage{
-sim.CATE(n = 1500, p = 2)
+sim.CATE(n = 1500, p = 2, prop_active = 1)
 }
 \arguments{
 \item{n}{Sample size}
 
 \item{p}{Dimension of W}
+
+\item{prop_active}{Proportion of active (nonzero coef) variables}
 }
 \description{
 Simulate a dataset with known constant CATE

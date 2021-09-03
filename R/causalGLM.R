@@ -20,6 +20,7 @@
 #' When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner is cbind(W,A*V) where V is the design matrix specified by the argument \code{formula}.
 #' Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
 #' For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.
+#' In high dimensions, pool_A_when_training = FALSE may be preferred to prevent dilution of the treatment interactions in the fitting.
 #' @param estimand Estimand/parameter to estimate. Choices are:
 #' CATE: Estimate conditional average treatment effect with \code{spCATE} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
@@ -161,7 +162,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 
 
 #' causalGLMwithLASSO
-#' causalGLM in high dimensions. A wrapper for causalGLM with main-term \code{glmnet}/LASSO as base learner. 
+#' causalGLM in high dimensions. A wrapper for causalGLM with partially-penalized main-term \code{glmnet}/LASSO as base learner. 
 #' This method is useful for high dimensional settings where other learners are slow or poorly behaved.
 #' It may also be useful for smaller sample sizes where other machine-learning algorithms may overfit.
 #' Otherwise, we do not recommend using this function for lower dimensional settings since glmnet can be mispecified.

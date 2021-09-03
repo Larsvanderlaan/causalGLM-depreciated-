@@ -4,12 +4,14 @@
 \alias{sim.OR}
 \title{Simulate a dataset with known constant OR}
 \usage{
-sim.OR(n = 1500, p = 2)
+sim.OR(n = 1500, p = 2, prop_active = 1)
 }
 \arguments{
 \item{n}{Sample size}
 
 \item{p}{Dimension of W}
+
+\item{prop_active}{Proportion of active (nonzero coef) variables}
 }
 \description{
 Simulate a dataset with known constant OR
