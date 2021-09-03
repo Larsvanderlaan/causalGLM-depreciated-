@@ -16,7 +16,8 @@ causalGLMwithLASSO(
   estimand = c("CATE", "OR", "RR"),
   cross_fit = TRUE,
   weights = NULL,
-  data_list = NULL
+  data_list = NULL,
+  ...
 )
 }
 \arguments{
@@ -39,6 +40,8 @@ In lower dimensions, we recommend setting this to FALSE.}
 \item{weights}{An optional vector of weights to use in procedure.}
 
 \item{data_list}{A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])}
+
+\item{...}{Other arguments to pass to glmnet}
 }
 \description{
 causalGLMwithLASSO

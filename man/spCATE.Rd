@@ -11,9 +11,10 @@ spCATE(
   A,
   Y,
   family_CATE = gaussian(),
+  pool_A_when_training = T,
   constant_variance = FALSE,
-  sl3_Lrnr_A = NULL,
-  sl3_Lrnr_Y = NULL,
+  sl3_Learner_A = NULL,
+  sl3_Learner_Y = NULL,
   weights = NULL,
   smoothness_order_Y0W = 1,
   max_degree_Y0W = 2,
@@ -32,9 +33,9 @@ spCATE(
 
 \item{family_CATE}{A R-family object specifying the link function for the CATE}
 
-\item{sl3_Lrnr_A}{An optional sl3-Learner object to estimate P(A=1|W)}
+\item{sl3_Learner_A}{An optional sl3-Learner object to estimate P(A=1|W)}
 
-\item{sl3_Lrnr_Y}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]}
+\item{sl3_Learner_Y}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]}
 
 \item{weights}{A vector of optional weights.}
 

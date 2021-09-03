@@ -28,8 +28,9 @@ print(trueCATE)
 # Lets specify a constant model for the CATE
 formula_CATE <- ~ 1
 
-# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree or num_knots or parallel.
-causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE")
+# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree_Y0W or num_knots_Y0W or parallel.
+# 
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  max_degree_Y0W = 1, estimand = "CATE")
 # We got pretty close!
 summary(causal_fit)
 
@@ -92,7 +93,7 @@ summary(causal_fit)
 
 
 ```{r}
-set.seed(577200)
+set.seed(1500)
 data_list <- sim.RR(500, 2)
 # Confounders
 W <- data_list$W
@@ -106,11 +107,11 @@ Y <- data_list$Y
 print(data_list$logRR)
 
 # Let's learn it using semiparametric methods.
-# Lets specify a constant model for the RR
-formula_logRR <- ~ 1
+# Lets specify a less constant model for the RR (only first coefficient is nonzero)
+formula_logRR <- ~ 1 + W1 + W2
 
 # This will take a few seconds. 
-causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand = "RR", learning_method = "mars")
+causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand = "RR", learning_method = "mars"  )
 # We got pretty close!
  
  summary(causal_fit) 
@@ -147,6 +148,35 @@ predict(causal_fit, W[1:5,])
 # Linear predictor is the untransformed estimate  
 # Estimate is the CATE predictions (i.e. transformed estimate (in this case linear link))  
 # CI_left and CI_right are confidence intervals for the CATE estimate "estimate". P-values are also provided.
+```
+
+
+# causalGLM in high dimensional settings using the LASSO
+
+```{r}
+library(sl3)
+set.seed(1500)
+# Lets make it high dimensional
+data_list <- sim.CATE(n=250, p=100)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+
+trueCATE <- data_list$CATE
+# True treatment effect of data (is constant)
+trueCATE
+
+formula_CATE <- ~ 1  
+
+# We use causalGLMwithLASSO instead which uses glmnet for all fitting routines.
+# This will take a few seconds. (Cross-fitting runs glmnet 10 times.)
+# Note internally the interactions with `A` are not penalized to prevent it being drowned out by the high dimensional W.
+causal_fit <- causalGLMwithLASSO(formula = formula_CATE, cross_fit = TRUE, W  = W, A = A, Y = Y,  estimand = "RR")
+summary(causal_fit)
+# Wow, we got close!
 ```
 
 # Custom machine learning with sl3

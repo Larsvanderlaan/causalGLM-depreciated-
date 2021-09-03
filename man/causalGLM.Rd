@@ -13,19 +13,20 @@ causalGLM(
   Y,
   estimand = c("CATE", "OR", "RR"),
   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"),
+  pool_A_when_training = TRUE,
   cross_fit = ifelse(ncol(W) >= 12, T, F),
-  sl3_Learner = NULL,
+  sl3_Learner_A = NULL,
+  sl3_Learner_Y = NULL,
   glm_formula_A = NULL,
   glm_formula_Y = NULL,
-  glm_formula_Y0W = glm_formula_Y,
   weights = NULL,
   data_list = NULL,
   fast_analysis = TRUE,
   parallel = F,
   ncores = NULL,
-  smoothness_order = 1,
-  max_degree = ifelse(nrow(W) <= 100 || ncol(W) >= 20, 1, 2),
-  num_knots = c(ifelse(nrow(W) <= 150, 1, 10), ifelse(nrow(W) <= 150, 1, 5))
+  smoothness_order_Y0W = 1,
+  max_degree_Y0W = ifelse(nrow(W) >= 500, 2, 1),
+  num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10), 5, 1)
 )
 }
 \arguments{
@@ -51,6 +52,13 @@ OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies pa
 "ranger": Robust random-forests with the package \code{Ranger}
 "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7.}
 
+\item{pool_A_when_training}{Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
+Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
+Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
+When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner is cbind(W,A*V) where V is the design matrix specified by the argument \code{formula}.
+Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
+For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.}
+
 \item{cross_fit}{Whether to cross-fit the initial estimator. This is always set to FALSE if argument \code{sl3_Learner} is provided.
 learning_method = AutoML (default) does use cross-fitting for computational reasons and due to it being unnecessary for HAL.
 learning_method = `xgboost` and `ranger` are always cross-fitted regardless of the value of \code{cross_fit}
@@ -58,16 +66,23 @@ All other learning_methods are only cross-fitted if `cross_fit=TRUE`.
 Note, it is not necessary to cross-fit glm, glmnet, gam or mars as long as the dimension of W is not too high.
 In smaller samples and lower dimensions, it may fact hurt to cross-fit.}
 
-\item{sl3_Learner}{A \code{sl3} Learner object to use to estimate nuisance functions with machine-learning.
+\item{sl3_Learner_A}{A \code{sl3} Learner object to use to estimate nuisance function P(A=1|W) with machine-learning.
 Note, \code{cross_fit} is automatically set to FALSE if this argument is provided. 
 If you wish to cross-fit the learner \code{sl3_Learner} then do: sl3_Learner <- Lrnr_cv$new(sl3_Learner).
 Cross-fitting is recommended for all tree-based algorithms like random-forests and gradient-boosting.}
 
+\item{sl3_Learner_Y}{A \code{sl3} Learner object to use to estimate nuisance functions [Y|A=1,W] and E[Y|A=0,W] (depending on method) with machine-learning.
+Note, \code{cross_fit} is automatically set to FALSE if this argument is provided. 
+Keep in mind the value of the argument \code{pool_A_when_training}. If FALSE  then E[Y|A=0,W] is estimated by itself. 
+Therefore, it may not be needed to add interactions, since treatment interactions are automatic by stratification.
+If TRUE, the design matrix passed to the pooled learner contains A*V where V is the design matrix obtained from \code{formula}.
+For some learners, it may also be unnecessary to include interactions in this case.
+#' If you wish to cross-fit the learner \code{sl3_Learner} then do: sl3_Learner <- Lrnr_cv$new(sl3_Learner).
+Cross-fitting is recommended for all tree-based algorithms like random-forests and gradient-boosting.}
+
 \item{glm_formula_A}{A glm formula for P(A=1|W). Only used if learning_method = "glm".}
 
-\item{glm_formula_Y}{A glm formula for E[Y|A,W]. Only used if learning_method = "glm".}
-
-\item{glm_formula_Y0W}{A glm formula for E[Y|A=0,W]. Only used if learning_method = "glm".}
+\item{glm_formula_Y}{A glm formula for E[Y|A,W] or E[Y|A=0,W] depending on method. Only used if learning_method = "glm".}
 
 \item{weights}{An optional vector of weights to use in procedure.}
 
@@ -77,11 +92,11 @@ Cross-fitting is recommended for all tree-based algorithms like random-forests a
 
 \item{ncores}{Number of cores to use in parallelization.}
 
-\item{smoothness_order}{Smoothness order for HAL (see \code{hal9001/fit_hal})}
+\item{smoothness_order_Y0W}{Smoothness order for HAL estimator of E[Y|A=0,W] (see \code{hal9001/fit_hal})}
 
-\item{max_degree}{Max interaction degree for HAL (see \code{hal9001/fit_hal})}
+\item{max_degree_Y0W}{Max interaction degree for HAL estimator of E[Y|A=0,W] (see \code{hal9001/fit_hal})}
 
-\item{num_knots}{Number of knots by interaction degree for HAL (see \code{hal9001/fit_hal}). Used to generate basis functions.}
+\item{num_knots_Y0W}{Number of knots by interaction degree for HAL estimator of E[Y|A=0,W](see \code{hal9001/fit_hal}). Used to generate basis functions.}
 }
 \description{
 causalGLM

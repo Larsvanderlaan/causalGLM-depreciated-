@@ -18,8 +18,8 @@
 #' @param weights An optional vector of weights for each observation. Use with caution. This can lead to invalid inferences if included naively.
 #' @param W_new An optional matrix of new values of the baseline covariates `W` at which to predict odds ratio.
 #' @param glm_formula_A (Not recommended). An optional R formula object describing the functional form of P(A=1|W). If provided, \code{glm} is used for the fitting. (Not recommended. This method allows for and works best with flexible machine-learning algorithms.)
-#' @param  sl3_learner_A An optional \code{tlverse/sl3} learner object used to estimate P(A=1|W).
-#'  If both \code{sl3_learner_A} and \code{glm_formula_A} are not provided, a default learner is used (Lrnr_hal9001).
+#' @param  sl3_Learner_A An optional \code{tlverse/sl3} learner object used to estimate P(A=1|W).
+#'  If both \code{sl3_Learner_A} and \code{glm_formula_A} are not provided, a default learner is used (Lrnr_hal9001).
 #' @param glm_formula_Y0W (Not recommended). An optional R formula object describing the nuisance function `h(W) := logit(P(Y=1|A=0,W))`in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)`
 #' @param smoothness_order_Y0W Smoothness order of the nuisance function `h(W) := logit(P(Y=1|A=0,W))`in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)` to be estimated nonparametrically using the Highly Adaptive Lasso (\link{hal9001}), a powerful spline regression algorithm. 0 = discontinuous piece-wise constant function, 1 = continuous piece-wise linear, 2 = smooth piece-wise quadratic
 #' @param max_degree_Y0W Max degree of interaction (of spline basis functions) of the nuisance function `h(W) := logit(P(Y=1|A=0,W))`in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)` to be estimated nonparametrically using the Highly Adaptive Lasso (\link{hal9001}). `max_degree=1` corresponds with an additive model, `max_degree=2` corresponds with a bi-additive (two-way) model. This parameter significantly affects computation time.
@@ -31,7 +31,7 @@
 #' By default, Lrnr_hal9001 is used.
 #' @importFrom doMC registerDoMC
 #' @export
-spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_learner_A = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    fit_Q0W_separate = F, boundsOR = c(1e-3, 1e3), ... ) {
+spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_Learner_A = NULL, sl3_Learner_Y0W = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    boundsOR = c(1e-3, 1e3), ... ) {
   formula <-  formula_logOR
   targeting_method <- match.arg(targeting_method)
   if(parallel) {
@@ -39,13 +39,13 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
     fit_control$parallel <- TRUE
   }
   inverse_causal_weighting = FALSE
-
+  
   W <- as.matrix(W)
   if(is.null(Delta)) {
     Delta <- rep(1, nrow(W))
   }
-
-
+  
+  
   formula <- as.formula(formula)
   if(is.null(data)) {
     data <- as.data.frame(W)
@@ -53,15 +53,15 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
   if(is.null(data_new)) {
     data_new <- as.data.frame(W_new)
   }
-
-
+  
+  
   V <- model.matrix(formula, data = data)
   V_new <- model.matrix(formula, data = data_new)
-
+  
   if(is.null(weights)) {
     weights <- rep(1, nrow(W))
   }
-
+  
   ###### Learn IPCW weights
   # if(inverse_causal_weighting) {
   #   if(sum(1-Delta)>10) {
@@ -73,9 +73,9 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
   #   }
   #
   # }
-
-
-
+  
+  
+  
   weights <- Delta * weights
   keep <- Delta==1
   if(any(!keep)){
@@ -87,27 +87,27 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
     A <- A[keep ]
     Y <- Y[keep ]
     weights <- weights[keep]
-
+    
   }
   n <- nrow(W)
-
-
+  
+  
   ################################
   #### Learn P(A=1|X) ############
   ################################
   # Default sl3 learner
-  if(is.null(sl3_learner_A)){
-    sl3_learner_A <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W,   reduce_basis = reduce_basis, ...)
+  if(is.null(sl3_Learner_A)){
+    sl3_Learner_A <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W,   reduce_basis = reduce_basis, ...)
   }
   # If no glm formula then use sl3 learner.
   if(is.null(glm_formula_A)) {
-
+    
     data_A <- data.frame(W, A)
     covariates_A <- paste0("W", 1:ncol(W))
     colnames(data_A) <- c(covariates_A, "A")
     data_A$weights <- weights
     task_A <- sl3_Task$new(data_A, covariates = covariates_A, outcome = "A", outcome_type = "binomial", weights = "weights" )
-    fit_A <- sl3_learner_A$train(task_A)
+    fit_A <- sl3_Learner_A$train(task_A)
     g1 <- bound(fit_A$predict(task_A), 0.005)
   } else {
     # use glm is formula supplied
@@ -116,54 +116,70 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
     cfs <- coef(fit_A)
     g1 <- bound(as.vector(plogis(W_g%*%cfs)),0.005)
   }
-
-
-
-
+  
+  
+  
+  
   ################################################################################################
   #### Learn P(Y=1|A,X) under partially linear logistic model assumption #########################
   ################################################################################################
-  if(is.null(glm_formula_Y0W)){
-    # If no formula use HAL and respect model constraints.
-
-    if(fit_Q0W_separate) {
-
-      fit_control$weights <- weights[A==0]
-      fit_Y0 <- fit_hal(X = as.matrix(W)[A==0, ,drop = F],  Y = as.vector(Y)[A==0], family = "binomial", return_x_basis = T, fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W, ...)
-      Q0 <- predict(fit_Y0, new_data = as.matrix(W) )
-      Q0 <- bound(Q0, 1e-8)
+  print(sl3_Learner_Y0W)
+  if(!is.null(sl3_Learner_Y0W)) {
+    
+    if(!pool_A_when_training ) {
+       
+      X <- W
+      data_Y <- data.frame(X, A = A, Y=Y, weights = weights)
+      task_Y <- sl3_Task$new(data_Y, covariates =  colnames(X) , outcome = "Y" , weights= "weights")
+      sl3_Learner_Y0W <- sl3_Learner_Y0W$train(task_Y[A==0])
+      Q0 <-  sl3_Learner_Y0W$predict(task_Y)
+       
       fit_Y1 <- glm(Y~X-1, data = list(Y=Y[A==1], X=V[A==1, ,drop = F]), weights = weights[A==1], family = binomial(), offset = qlogis(Q0)[A==1])
       beta <- coef(fit_Y1)
       logOR <-  V%*% beta
-      Q1 <- plogis(qlogis(Q0) + A*logOR)
-      fit_Y <- list(a0 =fit_Y0, a1 =fit_Y1)
+      Q1 <- as.vector(plogis(qlogis(Q0) + A*logOR))
+      Q <- ifelse(A==1,Q1,Q0)
+       
     } else {
-      if(inverse_causal_weighting) {
-        # print("weigting")
-        # g <- bound(ifelse(A==1,g1,1-g1),0.05)
-        # weight_tmp <- weights*bound(1/g/G,0.05)
-      } else {
-        weight_tmp <- weights
-      }
-      fit_control$weights <-weight_tmp
-      fit_Y <- fit_hal(X = as.matrix(W), X_unpenalized = as.matrix(A*V), Y = as.vector(Y), family = "binomial", return_x_basis = T, fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W, ...)
-      Q <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (A*V))
-      Q0 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (0*V))
-      Q1 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (1*V))
-      if(inverse_causal_weighting) {
-        fit_tmp <- glm.fit(A*V,Y, weights = weights, family = binomial(), offset = qlogis(Q), intercept = F)
-        beta <- coef(fit_tmp)
-        Q1 <- plogis(qlogis(Q1) + A*V %*% beta)
-        Q <- ifelse(A==1,Q1,Q0)
-      }
-
+       
+      Vtmp <- V
+      colnames(Vtmp) <- paste0("V", 1:ncol(V))
+      X <- cbind(W, A*Vtmp)
+      X1 <- cbind(W, Vtmp)
+      X0 <- cbind(W, 0*Vtmp)
+       
+      data_Y <- data.table(X,   Y=Y, weights = weights)
+      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X) ), outcome = "Y" , weights= "weights")
+      data_Y1 <- data.table(X1,    Y=Y, weights = weights)
+      task_Y1 <- sl3_Task$new(data_Y1, covariates = c(colnames(X) ), outcome = "Y", weights= "weights")
+      data_Y0 <- data.table(X0,  Y=Y, weights = weights)
+      task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(X) ), outcome = "Y", weights= "weights")
+      sl3_Learner_Y0W <- sl3_Learner_Y0W$train(task_Y )
+      Q   <-  sl3_Learner_Y0W$predict(task_Y)
+      Q1 <-  sl3_Learner_Y0W$predict(task_Y1)
+      Q0 <-  sl3_Learner_Y0W$predict(task_Y0)
     }
-
-
+  } else if(is.null(glm_formula_Y0W)){
+    # If no formula use HAL and respect model constraints.
+    
+    print("here")
+    
+    weight_tmp <- weights
+    
+    fit_control$weights <-weight_tmp
+    fit_Y <- fit_hal(X = as.matrix(W), X_unpenalized = as.matrix(A*V), Y = as.vector(Y), family = "binomial", return_x_basis = T, fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W, ...)
+    Q <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (A*V))
+    Q0 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (0*V))
+    Q1 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (1*V))
+    
+    
+    
+    
+    
   } else {
     # Use glm if formula supplied
-    if(fit_Q0W_separate) {
-
+    if(!pool_A_when_training) {
+      
       W_np <- model.matrix(glm_formula_Y0W, data = as.data.frame(W))
       X <- W_np
       fit_Y0 <- glm.fit(X[A==0,,drop=F],Y[A==0], weights = weights[A==0], family = binomial(), intercept = F)
@@ -173,9 +189,9 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
       cfs <- coef(fit_Y1)
       Q1 <- as.vector(plogis(qlogis(Q0) + A*V%*%cfs))
       Q <- ifelse(A==1, Q1, Q0)
-
+      
     } else {
-
+      
       W_np <- model.matrix(glm_formula_Y0W, data = as.data.frame(W))
       X <- cbind(W_np, A*V)
       X1 <- cbind(W_np, 1*V)
@@ -185,54 +201,59 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
       Q <- as.vector(plogis(X%*%cfs))
       Q1 <- as.vector(plogis(X1%*%cfs))
       Q0 <- as.vector(plogis(X0%*%cfs))
-
+      
     }
   }
-
-
+  
+   
   #### Do some model-compatible bounding of Q0
+  Q0 <- as.vector(bound(Q0, 0.0025))
+  Q1 <- as.vector(bound(Q1, 0.0025))
   denom <- pmax((1-Q1)*(Q0), 1e-8)
   num <- Q1*(1-Q0)
   OR <- num/denom
-
+  
   logOR <-  log(pmin(pmax(OR, boundsOR[1]), boundsOR[2]) )
-
+  
   beta <- as.vector(coef(glm(logOR~V-1, family = gaussian(), data = list(V=V, logOR = logOR ))))
   logOR <- V%*%beta
-  Q0 <- as.vector(bound(Q0, 1e-4))
-  Q1 <- as.vector(plogis(qlogis(Q0) + logOR))
+  Q0 <- as.vector(bound(Q0, 0.005))
+  Q1 <- bound(as.vector(plogis(qlogis(Q0) + logOR)),0.005)
   Q <- ifelse(A==1, Q1, Q0)
-
+  
   Qinit <- Q
   Qinit1 <- Q1
   Qinit0 <- Q0
-
-
-
+  
+   
+  
+  
   h_star <-  as.vector(-(g1*Qinit1*(1-Qinit1)) / (g1*Qinit1*(1-Qinit1) + (1-g1)*Qinit0*(1-Qinit0)))
   H_star <- V*(A + h_star)
   scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Qinit1*(1-Qinit1) * Qinit0*(1-Qinit0) * g1 * (1-g1) / (g1 * Qinit1*(1-Qinit1) + (1-g1) *Qinit0*(1-Qinit0) )) * v*V)})
+   
   scale_inv <- solve(scale)
   var_unscaled <- as.matrix(var(weights*H_star*(Y-Qinit)))
   var_scaled_init <-  scale_inv %*% var_unscaled  %*%  t(scale_inv)
-
+  
   ################################
   ##### Targeting Step ###########
   ################################
   converged_flag <- FALSE
   for(i in 1:200) {
-
+    
     h_star <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
     H_star <- V*(A + h_star)
     H_star1 <- V*(1 + h_star)
     H_star0 <- V* h_star
     offset <- qlogis(Q)
     scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
-
+    
     scale_inv <- solve(scale)
-
+    
     score <- max(abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
-
+    print(score)
+    print(i)
     if(abs(score) <= 1/n || abs(score) <= min(0.5,0.5*min(sqrt(diag(var_scaled_init))))/sqrt(n)/log(n)){
       converged_flag <- TRUE
       break
@@ -242,12 +263,12 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
       dir <- colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q))
       dir <- dir/sqrt(mean(dir^2))
       risk <- function(epsilon) {
-
+        
         Qeps <- plogis(offset + clev_reduced%*%dir * epsilon)
         loss <- -1 * weights * ifelse(Y==1, log(Qeps), log(1-Qeps))
         return(mean(loss))
-
-
+        
+        
       }
       optim_fit <- optim(
         par = list(epsilon = 0.01), fn = risk,
@@ -255,46 +276,46 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
         method = "Brent"
       )
       eps <-  (scale_inv %*%dir) * optim_fit$par
-
+      
     } else {
       eps <- coef(glm(Y~X-1, family = binomial(), weights =  weights, offset = offset, data = list(Y = Y, X = H_star)))
     }
     #eps <- coef(glm(Y~X-1, family = binomial(), weights = weights, offset = offset, data = list(Y = Y, X = H_star)))
-
+    
     Q0 <- as.vector(plogis(qlogis(Q0) +  H_star0 %*% eps ))
     Q1 <-  as.vector(plogis(qlogis(Q1) +  H_star1 %*% eps))
     Q <- ifelse(A==1, Q1, Q0)
-
-
+    
+    
   }
   if(!converged_flag){
-
+    
     warning("Targeting did not converge.")
   }
-
-
-
+  
+  
+  
   # Cheap way of extracting coefficients.
   denom <- pmax((1-Q1)*(Q0), 1e-8)
   num <- Q1*(1-Q0)
   OR <- num/denom
   logOR <- log(pmax(OR, 1e-8))
   estimates <- as.vector(coef(glm(logOR~V-1, family = gaussian(), data = list(V=V, logOR = logOR ))))
-
-
-
-
-
+  
+  
+  
+  
+  
   h_star <- -(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0))
   H_star <- weights*V*(A + h_star)
   scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
   scale_inv <- solve(scale)
   var_unscaled <- as.matrix(var(weights*H_star*(Y-Q)))
   var_scaled <-  scale_inv %*% var_unscaled  %*%  t(scale_inv)
-
-
+  
+  
   var_scaled <- var_scaled_init
-
+  
   compute_predictions <- function(data_new) {
     V_newer <- model.matrix(formula, data = data_new)
     est_grid <-V_newer%*%estimates
@@ -307,9 +328,9 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
     colnames(preds_new) <- c(colnames(V_newer), "estimate",  "se/sqrt(n)", "se", "lower_CI",  "upper_CI", "Z-value", "p-value" )
     return(preds_new)
   }
-
+  
   preds_new <- compute_predictions(data_new)
-
+  
   se <- sqrt(diag(var_scaled))
   Zvalue <- abs(sqrt(n) * estimates/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
@@ -321,6 +342,6 @@ spOR <- function(formula_logOR = ~1, W, A, Y, data = NULL, Delta = NULL, weights
   class(output) <- c("spOR", "causalGLM")
   return(output)
   #######
-
+  
 }
 

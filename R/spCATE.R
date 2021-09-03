@@ -8,8 +8,8 @@
 #' @param W A matrix of baseline covariates to condition on.
 #' @param A A binary treatment assignment vector
 #' @param Y An outcome variable (continuous or binary)
-#' @param sl3_Lrnr_A An optional sl3-Learner object to estimate P(A=1|W)
-#' @param sl3_Lrnr_Y An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]
+#' @param sl3_Learner_A An optional sl3-Learner object to estimate P(A=1|W)
+#' @param sl3_Learner_Y An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]
 #' @param weights A vector of optional weights.
 #' @param smoothness_order_Y0W Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @param num_knots_Y0W Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
@@ -17,10 +17,11 @@
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #'
 #' @export
-spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), constant_variance = FALSE,  sl3_Lrnr_A = NULL, sl3_Lrnr_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
-  fit_separate <- !is.null(sl3_Lrnr_Y) || family_CATE$family != "gaussian" || family_CATE$link != "identity"
+spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
+   
+  fit_separate <- !pool_A_when_training  
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
-
+ 
   W <- as.matrix(W)
   A <- as.vector(A)
   Y <- as.vector(Y)
@@ -30,11 +31,9 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
     weights <- rep(1,n)
   }
   fit_control$weights <- weights
-  if(is.null(sl3_Lrnr_Y)) {
-    sl3_Lrnr_Y <- default_learner
-  }
-  if(is.null(sl3_Lrnr_A)) {
-    sl3_Lrnr_A <- default_learner
+   
+  if(is.null(sl3_Learner_A)) {
+    sl3_Learner_A <- default_learner
   }
    
 
@@ -49,37 +48,69 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
   # Estimate g
   data_A <- data.frame(W, A = A, weights = weights)
   task_A <- sl3_Task$new(data_A, covariates = colnames(W), outcome = "A", weights= "weights")
-  sl3_Lrnr_A <- sl3_Lrnr_A$train(task_A)
-  g1 <- sl3_Lrnr_A$predict(task_A)
+  sl3_Learner_A <- sl3_Learner_A$train(task_A)
+  g1 <- sl3_Learner_A$predict(task_A)
   g0 <- 1- g1
 
 
-
-  fit_separate <- !is.null(sl3_Lrnr_Y)
-
+ 
   # Estimate part lin Q
-  if(!fit_separate){
-    fit_Y <- fit_hal(X = as.matrix(W), X_unpenalized = as.matrix(A*V), Y = as.vector(Y), family = family_CATE, fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
+  if(is.null(sl3_Learner_Y) & !(family_CATE$family == "gaussian" && family_CATE$link == "identity")) {
+    sl3_Learner_Y <- default_learner
+  }
+  if(is.null(sl3_Learner_Y)){
+     
+    
+     
+    fit_Y <- fit_hal(X = as.matrix(W), X_unpenalized = as.matrix(A*V), Y = as.vector(Y), family = "gaussian", fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
     Q <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (A*V))
     Q0 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (0*V))
     Q1 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (1*V))
   } else {
-
-    data_Y <- data.frame(W, A = A, Y=Y, weights = weights)
-    task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W), "A"), outcome = "Y" , weights= "weights")
-    data_Y1 <- data.frame(W, A = 1, Y=Y, weights = weights)
-    task_Y1 <- sl3_Task$new(data_Y1, covariates = c(colnames(W), "A"), outcome = "Y", weights= "weights")
-    data_Y0 <- data.frame(W, A = 0, Y=Y, weights = weights)
-    task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(W), "A"), outcome = "Y", weights= "weights")
-
-    sl3_Lrnr_Y <- sl3_Lrnr_Y$train(task_Y)
-    Q <-  sl3_Lrnr_Y$predict(task_Y)
-    Q1 <-  sl3_Lrnr_Y$predict(task_Y1)
-    Q0 <-  sl3_Lrnr_Y$predict(task_Y0)
-
+    X <- W
+    X1 <- W
+    X0 <- W
+    data_Y <- data.frame(X, A = A, Y=Y, weights = weights)
+    task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X), "A"), outcome = "Y" , weights= "weights")
+    task_Y0 <- sl3_Task$new(data_Y, covariates =  colnames(X) , outcome = "Y" , weights= "weights") 
+    
+    if(fit_separate && family_CATE$family == "gaussian" && family_CATE$link == "identity") {
+     
+      sl3_Learner_Y <- sl3_Learner_Y$train(task_Y0[A==0])
+      Q0 <-  sl3_Learner_Y$predict(task_Y0)
+      beta <- coef(glm.fit(A*V, Y, family = gaussian(), offset = Q0, intercept = F))
+      Q1 <- Q0 + V %*% beta
+      Q <- ifelse(A==1, Q1, Q0)
+    } else if(fit_separate) {
+      sl3_Learner_Y0 <- sl3_Learner_Y$train(task_Y0[A==0])
+      sl3_Learner_Y1 <- sl3_Learner_Y$train(task_Y0[A==1] )
+      Q1 <-  sl3_Learner_Y1$predict(task_Y0)
+      Q0 <-  sl3_Learner_Y0$predict(task_Y0)
+      Q <- ifelse(A==1, Q1,Q0)
+       
+    } else {
+      
+      Vtmp <- V
+      colnames(Vtmp) <- paste0("V", 1:ncol(V))
+      X <- cbind(W, A*Vtmp)
+      X1 <- cbind(W, Vtmp)
+      X0 <- cbind(W, 0*Vtmp)
+      print(ncol(X))
+      data_Y <- data.table(X,   Y=Y, weights = weights)
+      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X) ), outcome = "Y" , weights= "weights")
+      data_Y1 <- data.table(X1,    Y=Y, weights = weights)
+      task_Y1 <- sl3_Task$new(data_Y1, covariates = c(colnames(X) ), outcome = "Y", weights= "weights")
+      data_Y0 <- data.table(X0,  Y=Y, weights = weights)
+      task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(X) ), outcome = "Y", weights= "weights")
+      sl3_Learner_Y <- sl3_Learner_Y$train(task_Y )
+      Q   <-  sl3_Learner_Y$predict(task_Y)
+      Q1 <-  sl3_Learner_Y$predict(task_Y1)
+      Q0 <-  sl3_Learner_Y$predict(task_Y0)
+    }
+     
   }
 
-
+  
   beta <- coef(glm.fit(V, Q1-Q0, family = family_CATE, intercept = F))
   link <- V %*% beta
   CATE <- family_CATE$linkinv(link)
@@ -91,11 +122,16 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
 
 
   # Estimate var
+   
+ 
   binary <- all(Y %in% c(0,1))
   if(binary) {
-    sigma2 <- Q*(1-Q)
-    sigma21 <- Q1*(1-Q1)
-    sigma20 <- Q0*(1-Q0)
+    Qtmp <- bound(Q,0.01)
+    Qtmp1 <- bound(Q1,0.01)
+    Qtmp0 <- bound(Q0,0.01)
+    sigma2 <- Qtmp*(1-Qtmp)
+    sigma21 <- Qtmp1*(1-Qtmp1)
+    sigma20 <- Qtmp0*(1-Qtmp0)
   } else {
     if(constant_variance) {
       sigma2 <- mean((Y - Q)^2)
@@ -113,6 +149,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
       sigma2 <- predict(fit_Y, new_data =X)
       sigma20 <- predict(fit_Y, new_data = X0)
       sigma21 <- predict(fit_Y, new_data = X1)
+       
     }
     
   }
@@ -122,8 +159,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
   
   
   
-   
-  
+ 
   
   risk_function <- function(beta) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
@@ -140,7 +176,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
     (sum(sds*(colMeans(EIF)^2)))
   }
    (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
-   print(one_step$value)
+ 
   one_step <- one_step$par
     
   
@@ -148,25 +184,26 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
   
   
   
-  
+ 
   for(i in 1:100) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
 
     num <- gradM * ( g1/sigma21)
     denom <- (g0/ sigma20 + g1/sigma21)
     hstar <- - num/denom
+     
     H <- (A*gradM  + hstar) /sigma2
     EIF <- weights * as.matrix(H * (Y-Q))
 
     linpred <- family_CATE$linkfun(Q1-Q0)
-
+     
     risk_function <- function(beta) {
       loss <- weights*(Y - family_CATE$linkinv(A*linpred +    A*V %*% beta) - Q0 - hstar %*% beta)^2 / sigma2
       mean(loss)/2
     }
-    suppressWarnings(hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T)$hessian)
+    (hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T , method = "BFGS")$hessian)
     scale <- hessian
-
+    
     #print(as.data.frame(hessian))
 
     #scale <- as.matrix(apply(gradM, 2, function(v) {colMeans_safe(weights*(A*gradM  + hstar) *  A*gradM * v /sigma2  )}) )
@@ -195,7 +232,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), consta
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par
-    Q0 <- as.vector(Q0 + hstar %*% eps)
+    Q0 <- bound(as.vector(Q0 + hstar %*% eps),0)
     CATE <- family_CATE$linkinv(linpred +  V %*% eps)
     beta <- coef(glm.fit(V, CATE, family = family_CATE, intercept = F))
     link <- as.vector(V %*% beta)

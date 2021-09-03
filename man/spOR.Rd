@@ -9,13 +9,15 @@ spOR(
   W,
   A,
   Y,
+  pool_A_when_training = T,
   data = NULL,
   Delta = NULL,
   weights = NULL,
   W_new = W,
   data_new = data,
   glm_formula_A = NULL,
-  sl3_learner_A = NULL,
+  sl3_Learner_A = NULL,
+  sl3_Learner_Y0W = NULL,
   glm_formula_Y0W = NULL,
   smoothness_order_Y0W = 1,
   max_degree_Y0W = 2,
@@ -27,7 +29,6 @@ spOR(
   parallel = F,
   ncores = NULL,
   targeting_method = c("universal", "iterative"),
-  fit_Q0W_separate = F,
   boundsOR = c(0.001, 1000),
   ...
 )
@@ -50,8 +51,8 @@ This corresponds with `f(W)` in the partially linear logistic-link model `logit(
 
 \item{glm_formula_A}{(Not recommended). An optional R formula object describing the functional form of P(A=1|W). If provided, \code{glm} is used for the fitting. (Not recommended. This method allows for and works best with flexible machine-learning algorithms.)}
 
-\item{sl3_learner_A}{An optional \code{tlverse/sl3} learner object used to estimate P(A=1|W).
-If both \code{sl3_learner_A} and \code{glm_formula_A} are not provided, a default learner is used (Lrnr_hal9001).}
+\item{sl3_Learner_A}{An optional \code{tlverse/sl3} learner object used to estimate P(A=1|W).
+If both \code{sl3_Learner_A} and \code{glm_formula_A} are not provided, a default learner is used (Lrnr_hal9001).}
 
 \item{glm_formula_Y0W}{(Not recommended). An optional R formula object describing the nuisance function `h(W) := logit(P(Y=1|A=0,W))`in the partially linear logistic-link model `logit(P(Y=1|A,W)) = b*Af(W) + h(W)`}
 

@@ -11,12 +11,13 @@ spRR(
   A,
   Y,
   family_RR = gaussian(),
-  sl3_Lrnr_A = NULL,
-  sl3_Lrnr_Y = NULL,
+  pool_A_when_training = TRUE,
+  sl3_Learner_A = NULL,
+  sl3_Learner_Y = NULL,
   weights = NULL,
-  smoothness_order = 1,
-  max_degree = 2,
-  num_knots = c(15, 5),
+  smoothness_order_Y0W = 1,
+  max_degree_Y0W = 2,
+  num_knots_Y0W = c(15, 5),
   fit_control = list()
 )
 }
@@ -31,17 +32,21 @@ spRR(
 
 \item{family_RR}{A R-family object specifying the link function for the log relative risk (gaussian/identity implies formula_logRR is directly modelling the log RR)}
 
-\item{sl3_Lrnr_A}{An optional sl3-Learner object to estimate P(A=1|W)}
+\item{pool_A_when_training}{Whether to estimate E[Y|A=1,W] and E[Y|A=0,W] separately or pool the regression.
+If TRUE, the design matrix passed to the regression algorithm/learner is cbind(W,A*V) where V is the design matrix specified by the argument \code{formula_logRR}.}
 
-\item{sl3_Lrnr_Y}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W]}
+\item{sl3_Learner_A}{An optional sl3-Learner object to estimate P(A=1|W)}
+
+\item{sl3_Learner_Y}{An optional sl3-Learner object to estimate nuisance conditional means E[Y|A=0,W] and E[Y|A=1,W] (either pooled or separately depending on \code{pool_A_when_training})
+If pool_A_when_training = T, it is recommended to specify the sl3 internal family object of the learner to equal `poisson()`.`}
 
 \item{weights}{A vector of optional weights.}
 
-\item{smoothness_order}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
+\item{smoothness_order_Y0W}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
 
-\item{max_degree}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
+\item{max_degree_Y0W}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
 
-\item{num_knots}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
+\item{num_knots_Y0W}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
 
 \item{fit_control}{Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.}
 }
