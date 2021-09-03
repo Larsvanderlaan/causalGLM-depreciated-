@@ -143,6 +143,9 @@ causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y, learning_m
 coef(causal_fit)[,c(1,4,5,6,7)]
 causal_fit$ATE
 
+# If you do not want to compute ATE, you can do:
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y, learning_method = "glmnet", estimand = "CATE", return_ATE = FALSE)  
+summary(causal_fit)
 ```
  
 
