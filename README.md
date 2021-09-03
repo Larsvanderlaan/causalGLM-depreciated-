@@ -6,6 +6,8 @@ It is possible to get robust and efficient inference for causal quantities using
 
 In this package, we utilize targeted machine-learning to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these semiparametric methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 30-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in a diverse range of settings. Specifically, the methods implement targeted maximum likelihood estimation (TMLE) which simulations suggest is more robust than estimating-equation-based estimators and leads to noticable improvements in confidence interval coverage in higher dimensional settings with smaller sample sizes (e.g. n = 50-250).
 
+Another benefit of this package is that by allowing for adaptive algorithms like MARS, LASSO and other variable selection techniques valid inference can be obtained in high dimensions. This is helpful when there are many possible covariates/confounders to adjust for but you do not know which ones are important. In such settings, parametric glm may break down or lose power.
+
 
 This package supports the estimands:
 
@@ -14,8 +16,8 @@ This package supports the estimands:
 3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric log-linear relative-risk regression with general link functions)
 
 Noticable features supported:
-1. Efficient semiparametric inference
-2. High dimensional covariates (with the glmnet implementation of LASSO using the wrapper function causalGLMwithLASSO)
+1. Efficient semiparametric inference even with adaptive estimation and variable selection
+2. High dimensional covariates and variable selection for confounders (with the glmnet implementation of LASSO using the wrapper function causalGLMwithLASSO)
 3. General machine-learning tools with the tlverse/sl3 ecosystem
 4. Built-in machine-learning routines for diverse settings and immediate use.
 
@@ -141,6 +143,8 @@ This function also supports general link functions using the "family_RR" argumen
 Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects the constraints of the statistical model and tries to listen to the data as much as possible. This can lead to improved finite-sample performance in certain real-world settings like those with model misspecification and positivity/imbalance issues (Porter et al., 2012).
 
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default, robust machine-learning is performed so user specification is not necessary.)
+
+The sim.R file includes randomly generated simulations of coverage for all implemented methods and it compares coverage relative to DML. The simulations suggest that in smaller sample sizes with higher dimensions, causalGLM substantially outperforms competing methods.
 
 Example code:
 devtools::install_github("tlverse/sl3", ref="devel")
