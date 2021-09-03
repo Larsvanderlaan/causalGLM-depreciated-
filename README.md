@@ -23,7 +23,7 @@ Simulations suggest:
 1. Robust finite sample performance even when sample size is as low as n = 50-100
 2. Robust performance with higher dimensional model specifications for the CATE/RR/OR
 3. Comparable estimator variance, power and confidence-interval width relative to parametric generalized linear models (glm) even with the significantly relaxed model assumptions
-4. Substantially outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings, and has marginally better or similar performance in other settings.
+4. Substantially outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings, and has similar performance in other settings.
 
  
 
@@ -150,10 +150,7 @@ lrnr <- Lrnr_xgboost$new()
 lrnr <- Lrnr_gam$new()
 lrnr_cross_fit <- make_learner(Pipeline, Lrnr_cv$new(), lrnr)
 
-In addition, simulations suggest TMLE provides more robust estimates especially when higher dimensional parametric models are chosen (this is noticeable even when d = 3 or 4). In such settings, the higher dimensional estimating equations used in DML can in principle be unstable. One possible reason for this is that incompatibility of estimating equation solutions with the nuisance estimators becomes more pronounced as the number of equations grows, leading to additional finite sample variance. Since TMLE is a substitution estimator and uses robust maximum likelihood estimation, these are not issues for the methods implemented here. In this sense, the methods implemented here are generalizations of the standard GLM maximum likelihood estimation routines for parametric models and inherit their finite-sample robustness. 
-
-In internal simulations, the implemented methods had between substantially better confidence interval coverage than DML at sample sizes n = 50,75,100, 150, 250 with covariate dimension 4 and a full main term model for target estimand. The improvements were even more substantial as dimension grew. A more thorough simulation study is in process and will be publically released in the future.
-
+ 
  
  
 
