@@ -172,7 +172,7 @@ Just send me a message. I would enjoy connecting with you and be happy to develo
 
 These semiparametric models have a rich history and their theory goes back a long time. These references are very incomplete and and further references will be added in the future.
 
-Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf
+Most methods are based on theory and pseudo-code provided in the working paper van der Laan (2009), some of which is also published in journals: https://core.ac.uk/download/pdf/61320177.pdf (Page 600, 621, ish)
 
 
 The relative risk method is treated in Targeted Maximum Likelihood Estimation of Conditional Relative Risk in a Semi-parametric Regression Model, Tuglus et al. (2011): https://biostats.bepress.com/ucbbiostat/paper283/.
