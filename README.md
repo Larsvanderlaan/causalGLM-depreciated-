@@ -140,10 +140,6 @@ This function also supports general link functions using the "family_RR" argumen
 ## Is this like double-machine-learning (DML)?
 Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects the constraints of the statistical model and tries to listen to the data as much as possible. This can lead to substantially improved finite-sample performance in certain real-world settings like those with model misspecification and positivity/imbalance issues (Porter et al., 2012).
 
-In addition, simulations suggest TMLE provides robust estimates even when higher dimensional parametric models are chosen (this is noticeable even when d = 3 or 4). In such settings, the higher dimensional estimating equations used in DML can in principle be unstable. One possible reason for this is that incompatibility of estimating equation solutions with the nuisance estimators becomes more pronounced as the number of equations grows, leading to additional finite sample variance. Additionally, estimating equations of DML may have many or no solutions when nonlinear (e.g. for the RR and OR). Since TMLE is a substitution estimator and uses robust maximum likelihood estimation, these are not issues for the methods implemented here. In this sense, the methods implemented here are truly generalizations of the standard GLM maximum likelihood estimation routines for parametric models and inherit their finite-sample robustness. 
-
-In internal simulations, the implemented methods had between 5-10% better confidence interval coverage than DML at sample sizes n = 50,75,100 and between 2-5% better coverage for sample sizes n = 150, 250 with covariate dimension 4 and a full main term model for target estimand. The improvements were even more substantial as dimension grew. A more thorough simulation study is in process and will be publically released in the future.
-
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default, robust machine-learning is performed so user specification is not necessary.)
 
 Example code:
@@ -153,6 +149,13 @@ lrnr <- Lrnr_glm$new()
 lrnr <- Lrnr_xgboost$new()
 lrnr <- Lrnr_gam$new()
 lrnr_cross_fit <- make_learner(Pipeline, Lrnr_cv$new(), lrnr)
+
+In addition, simulations suggest TMLE provides more robust estimates especially when higher dimensional parametric models are chosen (this is noticeable even when d = 3 or 4). In such settings, the higher dimensional estimating equations used in DML can in principle be unstable. One possible reason for this is that incompatibility of estimating equation solutions with the nuisance estimators becomes more pronounced as the number of equations grows, leading to additional finite sample variance. Additionally, estimating equations of DML may have many or no solutions when nonlinear (e.g. for the RR and OR). Since TMLE is a substitution estimator and uses robust maximum likelihood estimation, these are not issues for the methods implemented here. In this sense, the methods implemented here are truly generalizations of the standard GLM maximum likelihood estimation routines for parametric models and inherit their finite-sample robustness. 
+
+In internal simulations, the implemented methods had between substantially better confidence interval coverage than DML at sample sizes n = 50,75,100, 150, 250 with covariate dimension 4 and a full main term model for target estimand. The improvements were even more substantial as dimension grew. A more thorough simulation study is in process and will be publically released in the future.
+
+ 
+ 
 
 Relevant reads:
 https://vanderlaan-lab.org/2019/12/24/cv-tmle-and-double-machine-learning/
