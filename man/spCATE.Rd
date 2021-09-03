@@ -13,6 +13,7 @@ spCATE(
   family_CATE = gaussian(),
   pool_A_when_training = T,
   constant_variance = FALSE,
+  return_ATE = TRUE,
   sl3_Learner_A = NULL,
   sl3_Learner_Y = NULL,
   weights = NULL,

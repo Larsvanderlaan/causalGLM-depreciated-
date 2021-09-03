@@ -32,8 +32,12 @@ formula_CATE <- ~ 1
 # 
 causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  max_degree_Y0W = 1, estimand = "CATE")
 # We got pretty close!
+coefs <- causal_fit$coefs
+
 summary(causal_fit)
 
+#### We also return an estimate of the ATE (which equals the CATE in this case)
+ATE <- causal_fit$ATE
 ```
 
 ```{r}
@@ -118,6 +122,28 @@ causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand
 
 ```
 
+# More on ATE with CATE
+
+
+```{r}
+set.seed(1500)
+data_list <- sim.CATE(500, 2)
+# Confounders
+W <- data_list$W
+# Binary treatment
+A <- data_list$A
+# Outcome (binary in this case)
+Y <- data_list$Y
+trueCATE <- data_list$CATE
+print(trueCATE)
+formula_CATE <- ~ W1 + W2 + 1
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y, learning_method = "glmnet", estimand = "CATE")
+
+
+coef(causal_fit)[,c(1,4,5,6,7)]
+causal_fit$ATE
+
+```
  
 
 # Extractor functions and inference for predictions
@@ -150,6 +176,16 @@ predict(causal_fit, W[1:5,])
 # CI_left and CI_right are confidence intervals for the CATE estimate "estimate". P-values are also provided.
 ```
 
+```{r}
+pred <- as.data.frame(predict(causal_fit, W))
+pred
+EIF <- causal_fit$EIF
+EIF_ATE <- rowMeans(apply(pred[,c(1,2,3)],1, function(w) {
+    EIF %*% w
+  }))
+dim(EIF_ATE)
+sd(EIF_ATE)/sqrt(500)
+```
 
 # causalGLMwithLASSO: causalGLM in high dimensional settings using the LASSO
 

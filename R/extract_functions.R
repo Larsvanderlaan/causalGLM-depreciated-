@@ -1,6 +1,10 @@
 #' @export
 summary.causalGLM <- function(object) {
-  (object$coefs[,c(1,6,4,5,7)])
+  print(object$coefs[,c(1,6,4,5,7)])
+  if(!is.null(object$ATE)) {
+    print(object$ATE[,c(1,6,4,5,7)])
+  }
+  return(invisible(object$coefs[,c(1,6,4,5,7)]))
 }
 
 #' @export
@@ -10,22 +14,26 @@ coef.causalGLM<- function(object) {
 
 
 #' @export
-predict.causalGLM <- function(object, Wnew) {
+predict.causalGLM <- function(object, Wnew ) {
   n <- object$n
   Wnew <- as.matrix(Wnew)
   formula <- object$formula
   linkinv <- object$linkinv
+  
   estimates <- as.matrix(object$coefs)[,"coefs"]
   var_scaled <- object$var_mat 
   
   V_newer <- model.matrix(formula, data = as.data.frame(Wnew))
   est_grid <-V_newer%*%estimates
+   
+  
+   
   se_grid <- apply(V_newer,1, function(m) {
     sqrt(sum(m * (var_scaled %*%m)))
   } )
   Zvalue <- abs(sqrt(n) * est_grid/se_grid)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
-  linkinv <- object$linkinv
+   
   estimates_transformed <- linkinv(est_grid)
   ci <- cbind(est_grid - 1.96*se_grid/sqrt(n), est_grid + 1.96*se_grid/sqrt(n))
   ci_transformed <- linkinv(ci)
@@ -34,3 +42,16 @@ predict.causalGLM <- function(object, Wnew) {
   return(preds_new)
   
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

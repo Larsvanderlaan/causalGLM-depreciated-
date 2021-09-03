@@ -17,7 +17,7 @@
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #'
 #' @export
-spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
+spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  return_ATE = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
    
   fit_separate <- !pool_A_when_training  
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
@@ -95,7 +95,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
       X <- cbind(W, A*Vtmp)
       X1 <- cbind(W, Vtmp)
       X0 <- cbind(W, 0*Vtmp)
-      print(ncol(X))
+      
       data_Y <- data.table(X,   Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X) ), outcome = "Y" , weights= "weights")
       data_Y1 <- data.table(X1,    Y=Y, weights = weights)
@@ -242,7 +242,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   }
 
   linkinv <- family_CATE$linkinv
-  
+   
   est <- beta
   se <- sqrt(diag(var(EIF)))
   Zvalue <- abs(sqrt(n) * est/se)
@@ -251,8 +251,29 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
   out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
   colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
-  output <- list(coefs = out, var_mat = var(EIF), n=n, formula = formula_CATE, linkinv = linkinv, link_type = "Maps linear predictor to CATE")
+  output <- list(coefs = out, ATE = NULL, var_mat = var(EIF), n=n, formula = formula_CATE, linkinv = linkinv, link_type = "Maps linear predictor to CATE", EIF = EIF)
   class(output) <- c("spCATE", "causalGLM")
+  
+  
+  if(return_ATE & family_CATE$link == "identity") {
+    
+     
+    
+    EIF_ATE <- rowMeans(EIF%*%t(V))
+    
+    se <- sd(EIF_ATE)
+    est <-  mean(V%*%beta)
+ 
+    ci <- c(est - 1.96*se/sqrt(n), est + 1.96*se/sqrt(n))
+    Zvalue <- abs(sqrt(n) * est/se)
+    pvalue <- signif(2*(1-pnorm(Zvalue)),5)
+    out <- matrix(c(est,se/sqrt(n) ,se, ci, Zvalue, pvalue), nrow=1)
+    
+    colnames(out) <- c("ATE",  "se/sqrt(n)","se", "CI_left", "CI_right", "Z-score", "p-value")
+    output$ATE <- out
+  }
+  
+  
   
   est <- one_step
   se <- sqrt(diag(var(EIF)))
