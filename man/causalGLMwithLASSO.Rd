@@ -3,7 +3,8 @@
 \name{causalGLMwithLASSO}
 \alias{causalGLMwithLASSO}
 \title{causalGLMwithLASSO
-causalGLM in high dimensions. A wrapper for causalGLM with partially-penalized \code{glmnet}/LASSO as base learner (Interactions terms with `A` are not penalized). 
+causalGLM in high dimensions. Valid inference with data-adaptive variable selection.
+A wrapper for causalGLM with partially-penalized \code{glmnet}/LASSO as base learner (Interactions terms with `A` are not penalized). 
 This method is useful for high dimensional settings where other learners are slow or poorly behaved.
 It may also be useful for smaller sample sizes where other machine-learning algorithms may overfit.
 Otherwise, we do not recommend using this function for lower dimensional settings since glmnet can be mispecified.}
@@ -47,7 +48,8 @@ In lower dimensions, we recommend setting this to FALSE.}
 }
 \description{
 causalGLMwithLASSO
-causalGLM in high dimensions. A wrapper for causalGLM with partially-penalized \code{glmnet}/LASSO as base learner (Interactions terms with `A` are not penalized). 
+causalGLM in high dimensions. Valid inference with data-adaptive variable selection.
+A wrapper for causalGLM with partially-penalized \code{glmnet}/LASSO as base learner (Interactions terms with `A` are not penalized). 
 This method is useful for high dimensional settings where other learners are slow or poorly behaved.
 It may also be useful for smaller sample sizes where other machine-learning algorithms may overfit.
 Otherwise, we do not recommend using this function for lower dimensional settings since glmnet can be mispecified.

@@ -1,7 +1,7 @@
 
  #    out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=50, p = 4, learning_method = "glmnet", nsims = 500, estimand= "CATE", compare_with_competitor = T)
 #' @export
-sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 4, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = F,    ... ){
+sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 4, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = TRUE,    ... ){
  
   estimand <- match.arg(estimand)
   if(estimand == "CATE") {
@@ -71,6 +71,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
 #     out <-   sim.causalGLMwithLasso(compare_with_competitor = T, nsims = 1000, cross_fit = TRUE)
 bigformula <- ~ 1 + W12 + + W2 + W3 + W112 + W123 + W254 + W345 + W234 + W421  + W163 + W164 + W262 + W263 + W419 +  W22 + W3 + W4 + W50 + W86 + W25 + W118 + W299 + W10 + W110 + W312 + W213 + W414 + W290+ W16 + W150 + W333 + W222 + W456
 smallformula <- ~ 1 + W12 + W50  + W299 + W414 
+#' @export
 sim.causalGLMwithLasso <- function(formula = smallformula,  estimand = c("CATE", "OR", "RR"), n = 100, p = 500, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = bigformula, formula_Y0W = bigformula, silent = FALSE, compare_with_competitor = F,    ... ){
   
   estimand <- match.arg(estimand)
