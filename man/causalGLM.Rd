@@ -26,7 +26,7 @@ causalGLM(
   parallel = F,
   ncores = NULL,
   smoothness_order_Y0W = 1,
-  max_degree_Y0W = ifelse(nrow(W) >= 500, 2, 1),
+  max_degree_Y0W = ifelse(nrow(W) >= 350, 2, 1),
   num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10), 5, 1)
 )
 }
