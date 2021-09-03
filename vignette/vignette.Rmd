@@ -168,8 +168,8 @@ Y <- data_list$Y
 trueCATE <- data_list$CATE
 # True treatment effect of data (is constant)
 trueCATE
-
-formula_CATE <- ~ 1  
+# Only the intercept is active
+formula_CATE <- ~ 1 + W1 + W2 + W3 + W4 + W5 + W6 + W7 + W8 + W9 + W10 
 
 # We use causalGLMwithLASSO instead which uses glmnet for all fitting routines.
 # This will take a few seconds. (Cross-fitting runs glmnet 10 times.)
@@ -222,7 +222,7 @@ lrnr_sl <- make_learner(Pipeline, lrnr_cv, Lrnr_nnls$new())
 
 # We can now pass in the learner.
 causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE", 
-                        sl3_Learner = lrnr_sl)
+                        sl3_Learner_A = lrnr_sl, sl3_Learner_Y = lrnr_sl)
 # We got pretty close!
 summary(causal_fit)
 
