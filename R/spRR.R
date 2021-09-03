@@ -20,7 +20,7 @@
 #' @param max_degree_Y0W Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @export
-spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_when_training = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list()){
+spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_when_training = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list(), return_competitor = F){
   fit_separate <- !is.null(sl3_Learner_Y) || family_RR$family != "gaussian" || family_RR$link != "identity"
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
   
@@ -56,8 +56,13 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   
   # Estimate part lin Q
+  binary <- all(Y %in% c(0,1))
   
-  print(range(Y))
+  if(binary){
+    outcome_type = "binomial"
+  } else {
+    outcome_type = "continuous"
+  }
   if(is.null(sl3_Learner_Y)) {
      
     fit_control$weights <- weights
@@ -74,19 +79,20 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       X0 <- cbind(W, 0*Vtmp)
       data_Y <- data.table(X, A = A, Y=Y, weights = weights)
       
-      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X)), outcome = "Y" , weights= "weights")
+     
+      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X)), outcome = "Y" , weights= "weights", outcome_type = outcome_type)
       data_Y1 <- data.table(X1, A = 1, Y=Y, weights = weights)
       task_Y1 <- sl3_Task$new(data_Y1, covariates = c(colnames(X)), outcome = "Y", weights= "weights")
       data_Y0 <- data.table(X0, A = 0, Y=Y, weights = weights)
       task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(X)), outcome = "Y", weights= "weights")
-       
+        
       sl3_Learner_Y <- sl3_Learner_Y$train(task_Y)
       Q <-  pmax(sl3_Learner_Y$predict(task_Y),0.01)
       Q1 <-  pmax(sl3_Learner_Y$predict(task_Y1),0.01)
       Q0 <-  pmax(sl3_Learner_Y$predict(task_Y0),0.01)
     } else {
       data_Y <- data.table(W, Y=Y, weights = weights)
-      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W)), outcome = "Y" , weights= "weights")
+      task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W)), outcome = "Y" , weights= "weights", outcome_type = outcome_type)
       lrnr_Y0 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==0])
       lrnr_Y1 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==1])
       Q1 <-  pmax(lrnr_Y1$predict(task_Y),0.01)
@@ -114,10 +120,31 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   
   
+  ###  Est EQN
   
+  risk_function <- function(beta) {
+    gradM <- family_RR$mu.eta(V%*%beta)*V
+    RR <- as.vector(exp(V %*% beta))
+    mstar <- RR + (1-A)*1
+    num <- gradM * ( RR * g1)
+    denom <- RR * g1 + g0
+    hstar <- - num/denom
+    H <- (A*gradM  + hstar)
+    Q <- A*RR*Q0 + (1-A)*Q0
+    EIF <- weights *   as.matrix(H * (Y-Q))
+    
+    sds <- apply(EIF,2,sd)
+    sds <- 1/sds
+    sds <- sds/sum(sds)
+    sds <- 1
+    (sum(sds*(colMeans(EIF)^2)))
+  }
+  (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function,  method = "BFGS" ))
+   
   
+  one_step <- one_step$par
   
-  
+   
   for(i in 1:200) {
     gradM <- family_RR$mu.eta(V%*%beta)*V
     
@@ -154,7 +181,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
-    print(max(abs(scores)))
+    #print(max(abs(scores)))
     if(max(abs(scores)) <= 1/n) {
       break
     }
@@ -197,5 +224,19 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   output <- list(coefs = out, var_mat = var(EIF), n=n,  formula = formula_logRR, linkinv = RR_linkinv, link_type = "Maps linear predictor to RR")
   class(output) <- c("spRR", "causalGLM")
+  output
+  
+  if(return_competitor){
+  est <- one_step
+  se <- sqrt(diag(var(EIF)))
+  Zvalue <- abs(sqrt(n) * est/se)
+  pvalue <- signif(2*(1-pnorm(Zvalue)),5)
+  ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
+  out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
+  colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+  output$coefs1 <- out
+  }
+  
+  
   output
 }

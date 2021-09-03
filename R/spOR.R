@@ -31,7 +31,7 @@
 #' By default, Lrnr_hal9001 is used.
 #' @importFrom doMC registerDoMC
 #' @export
-spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_Learner_A = NULL, sl3_Learner_Y0W = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    boundsOR = c(1e-3, 1e3), ... ) {
+spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data = NULL, Delta = NULL, weights = NULL, W_new = W, data_new = data, glm_formula_A = NULL, sl3_Learner_A = NULL, sl3_Learner_Y0W = NULL, glm_formula_Y0W = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(25,15,5), reduce_basis = 1e-3, fit_control = list(), sl3_learner_default = Lrnr_hal9001_custom$new(max_degree =2, smoothness_orders = 1, num_knots = c(25,15)), parallel = F,ncores = NULL, targeting_method = c("universal", "iterative"),    boundsOR = c(1e-3, 1e3), return_competitor = F, ... ) {
   formula <-  formula_logOR
   targeting_method <- match.arg(targeting_method)
   if(parallel) {

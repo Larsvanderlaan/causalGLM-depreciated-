@@ -112,9 +112,11 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
     } else if(learning_method == "glmnet" ) {
       sl3_Learner_A <- Lrnr_glmnet$new()
       sl3_Learner_Y <- Lrnr_glmnet$new(family = family)
+      
     } else if(learning_method == "glm" ) {
       sl3_Learner_A <- Lrnr_glm$new(formula = glm_formula_A)
       sl3_Learner_Y <- Lrnr_glm$new(formula = glm_formula_Y, family = family)
+      
       
     } else if(learning_method == "gam" ) {
       sl3_Learner_A <- Lrnr_gam$new()
@@ -155,7 +157,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   }
   
   sl3_Learner_Y0W <- sl3_Learner_Y
- 
+ print(sl3_Learner_Y)
   if(estimand == "RR") {
     return(spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...))
   }

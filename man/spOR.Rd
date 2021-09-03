@@ -30,6 +30,7 @@ spOR(
   ncores = NULL,
   targeting_method = c("universal", "iterative"),
   boundsOR = c(0.001, 1000),
+  return_competitor = F,
   ...
 )
 }

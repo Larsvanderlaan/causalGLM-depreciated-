@@ -11,3 +11,5 @@ colMeans_safe <- function(X) {
 bound <- function(x, b = 0){
   pmax(pmin(x,1-b),b)
 }
+
+ 

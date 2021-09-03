@@ -18,7 +18,8 @@ spRR(
   smoothness_order_Y0W = 1,
   max_degree_Y0W = 2,
   num_knots_Y0W = c(15, 5),
-  fit_control = list()
+  fit_control = list(),
+  return_competitor = F
 )
 }
 \arguments{

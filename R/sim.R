@@ -1,8 +1,7 @@
 
+ #    out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=1250, p = 4, learning_method = "glmnet", nsims = 1000, estimand= "RR", compare_with_competitor = T)
 
-
-
-sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", "RR"), n = 125, p = 5, prop_active = 1, nsims = 1000, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE,   ... ){
+sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 5, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = F,    ... ){
  
   estimand <- match.arg(estimand)
   if(estimand == "CATE") {
@@ -18,15 +17,17 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
   beta_A <- data_list$beta_A
   beta_Y <- data_list$beta_Y
   passes <- c()
+  passes1 <- c()
   type1 <- c()
   print(paste0("n=", n, "; p=",p))
   print(paste0("Total sims is: ", nsims))
-  print(dim(data_list$data))
+   
   for(i in 1:nsims) {
     print(paste0("Running simulation iteration: ", i))
     data_list <- sim(n,p,prop_active,  formula_estimand = formula_true, formula_A = formula_A, formula_Y0W = formula_Y0W, beta = beta, beta_A = beta_A, beta_Y=beta_Y)
     
-      fit_glm <- causalGLM(formula, W = data_list$W, A = data_list$A, Y = data_list$Y, estimand = estimand, learning_method = learning_method, constant_variance_CATE = TRUE,...)
+      fit_glm <- causalGLM(formula, W = data_list$W, A = data_list$A, Y = data_list$Y, estimand = estimand, learning_method = learning_method, constant_variance_CATE = TRUE , return_competitor = compare_with_competitor, ...)
+      
       
     
      out <- coef(fit_glm)
@@ -36,15 +37,20 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
     if(i%%25==0){
       print(out)
     }
-    
-     
-     
     ci <- out[,c(4,5), drop =F]
     pval <-  out[,c(7)]
     passes <- cbind(passes, ci[,1] <= beta & ci[,2] >= beta )
-    type1 <- c(type1, pval <= 0.05)
-    print("Coverage probability of 95% confidence intervals so far: ")
+    out <- fit_glm$coefs1
+     
+    print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
     print(rowMeans(passes))
+    if(!is.null(out)) {
+      ci <- out[,c(4,5), drop =F]
+      passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )
+      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print(rowMeans(passes1))
+    }
+     
     # print("Proportion of p-values less than 0.05 so far: ")
     # print(mean(type1))
   }
@@ -126,7 +132,7 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   }
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
-    runif(pY, min=-1,max=1)
+    beta_Y <- runif(pY, min=-1,max=1)
     beta_Y <- 2 * beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }

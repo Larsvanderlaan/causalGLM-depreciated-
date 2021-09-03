@@ -22,7 +22,8 @@ spCATE(
   num_knots_Y0W = c(15, 5),
   max_degree_sigma = 1,
   num_knots_sigma = ifelse(ncol(W) >= 25, 1, 10),
-  fit_control = list()
+  fit_control = list(),
+  return_competitor = FALSE
 )
 }
 \arguments{

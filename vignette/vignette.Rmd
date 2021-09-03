@@ -97,7 +97,7 @@ summary(causal_fit)
 
 
 ```{r}
-set.seed(1500)
+ 
 data_list <- sim.RR(500, 2)
 # Confounders
 W <- data_list$W
@@ -112,14 +112,14 @@ print(data_list$logRR)
 
 # Let's learn it using semiparametric methods.
 # Lets specify a less constant model for the RR (only first coefficient is nonzero)
-formula_logRR <- ~ 1 + W1 + W2
+formula_logRR <- ~ 1 + W1 + W2 
 
 # This will take a few seconds. 
-causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand = "RR", learning_method = "mars"  )
+causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand = "RR", learning_method = "gam"  )
 # We got pretty close!
  
  summary(causal_fit) 
-
+causal_fit$coefs1
 ```
 
 # More on ATE with CATE
