@@ -18,6 +18,7 @@ causalGLMwithLASSO(
   weights = NULL,
   data_list = NULL,
   constant_variance_CATE = FALSE,
+  return_competitor = F,
   ...
 )
 }

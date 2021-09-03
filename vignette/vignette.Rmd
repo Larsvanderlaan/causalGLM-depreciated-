@@ -119,7 +119,7 @@ causal_fit <- causalGLM(formula = formula_logRR, W  = W, A = A, Y = Y,  estimand
 # We got pretty close!
  
  summary(causal_fit) 
-causal_fit$coefs1
+ 
 ```
 
 # More on ATE with CATE

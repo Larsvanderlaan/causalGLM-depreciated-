@@ -73,7 +73,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     data_Y <- data.frame(X, A = A, Y=Y, weights = weights)
     task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X), "A"), outcome = "Y" , weights= "weights")
     task_Y0 <- sl3_Task$new(data_Y, covariates =  colnames(X) , outcome = "Y" , weights= "weights") 
-    
+   
     if(fit_separate && family_CATE$family == "gaussian" && family_CATE$link == "identity") {
      
       sl3_Learner_Y <- sl3_Learner_Y$train(task_Y0[A==0])
@@ -154,12 +154,11 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     
   }
 
-
+   
   #one_step <- mean((A-g1)*(Y-Q0))/ mean((A-g1)*A)
   
   
   
- 
   
   risk_function <- function(beta) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
@@ -176,15 +175,16 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     (sum(sds*(colMeans(EIF)^2)))
   }
    (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
- 
+  
   one_step <- one_step$par
-    
+   
   
   
   
   
   
- 
+  hessian <- NULL
+  EIF_init <- NULL
   for(i in 1:200) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
 
@@ -194,14 +194,17 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
      
     H <- (A*gradM  + hstar) /sigma2
     EIF <- weights * as.matrix(H * (Y-Q))
-
+    if(is.null(EIF_init)) {
+      EIF_init <- EIF
+    }
     linpred <- family_CATE$linkfun(Q1-Q0)
-     
+    if(T || is.null(hessian)){
     risk_function <- function(beta) {
       loss <- weights*(Y - family_CATE$linkinv(A*linpred +    A*V %*% beta) - Q0 - hstar %*% beta)^2 / sigma2
       mean(loss)/2
     }
     (hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T , method = "BFGS")$hessian)
+    }
     scale <- hessian
     
     #print(as.data.frame(hessian))
@@ -215,24 +218,30 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
 
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
-     
-    if(max(abs(scores)) <= 1/n) {
+     #print(scores)
+    if(max(abs(scores)) <= 1e-10) {
       break
     }
     linpred <- family_CATE$linkfun(Q1-Q0)
     risk_function <- function(eps) {
-
+      #loss <- weights*(Y - family_CATE$linkinv(A*linpred + A*V %*%eps) - Q0 - hstar %*% eps)^2 / sigma2
       loss <- weights*(Y - family_CATE$linkinv(A*linpred +  eps * A*V %*%direction_beta) - Q0 - eps*hstar %*% direction_beta)^2 / sigma2
       mean(loss)
     }
 
     optim_fit <- optim(
-      par = list(epsilon = 0.01), fn = risk_function,
-      lower = 0, upper = 0.01,
+      par = list(epsilon = 0)
+        , fn = risk_function ,# method = "BFGS"
+     lower = 0, upper = 1,
       method = "Brent"
     )
-    eps <-  direction_beta * optim_fit$par
-    Q0 <- bound(as.vector(Q0 + hstar %*% eps),0)
+    eps <- direction_beta * optim_fit$par #optim_fit$par #direction_beta * optim_fit$par
+    #print("eps")
+    #print(eps)
+    Q0 <- as.vector(Q0 + hstar %*% eps)
+    if(binary) {
+      Q0 <- bound(Q0,0)
+    }
     CATE <- family_CATE$linkinv(linpred +  V %*% eps)
     beta <- coef(glm.fit(V, CATE, family = family_CATE, intercept = F))
     link <- as.vector(V %*% beta)
@@ -242,9 +251,9 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   }
 
   linkinv <- family_CATE$linkinv
-   
+  
   est <- beta
-  se <- sqrt(diag(var(EIF)))
+  se <- sqrt(diag(var(EIF_init)))
   Zvalue <- abs(sqrt(n) * est/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
 

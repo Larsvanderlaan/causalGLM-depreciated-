@@ -157,7 +157,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   }
   
   sl3_Learner_Y0W <- sl3_Learner_Y
- print(sl3_Learner_Y)
+ 
   if(estimand == "RR") {
     return(spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...))
   }
@@ -197,7 +197,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
 #' @param ... Other arguments to pass to glmnet (NOTE: this use is different than that of \code{causalGLM})
 #' @export
-causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL, constant_variance_CATE = FALSE, ...  )  {
+causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL, constant_variance_CATE = FALSE,  return_competitor  = F,...  )  {
   V <- model.matrix(formula, as.data.frame(W))
   penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
   
@@ -210,7 +210,7 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
   if(cross_fit) {
     lrnr <- Lrnr_cv$new(lrnr)
   }
-  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE )
+  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE, return_competitor = return_competitor )
 }
 
 

@@ -1,7 +1,7 @@
 
- #    out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=1250, p = 4, learning_method = "glmnet", nsims = 1000, estimand= "RR", compare_with_competitor = T)
-
-sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 5, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = F,    ... ){
+ #    out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=50, p = 4, learning_method = "glmnet", nsims = 500, estimand= "CATE", compare_with_competitor = T)
+#' @export
+sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 4, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = F,    ... ){
  
   estimand <- match.arg(estimand)
   if(estimand == "CATE") {
@@ -18,7 +18,8 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
   beta_Y <- data_list$beta_Y
   passes <- c()
   passes1 <- c()
-  type1 <- c()
+  #type1 <- c()
+  print(paste0("Estimand is ", estimand))
   print(paste0("n=", n, "; p=",p))
   print(paste0("Total sims is: ", nsims))
    
@@ -31,6 +32,76 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
       
     
      out <- coef(fit_glm)
+     
+    if(is.vector(out)) {
+      matrix(out, nrow=1)
+    }
+    if(i%%25==0){
+     # print(out)
+    }
+    ci <- out[,c(4,5), drop =F]
+    #print(ci)
+    pval <-  out[,c(7)]
+    passes <- cbind(passes, ci[,1] <= beta & ci[,2] >= beta )
+     
+     
+    print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
+    print(rowMeans(passes))
+    
+    out <- fit_glm$coefs1
+    if(!is.null(out)) {
+      ci <- out[,c(4,5), drop =F]
+      passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )
+       #print(ci)
+        
+      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print(rowMeans(passes1))
+     
+      
+    }
+     
+    # print("Proportion of p-values less than 0.05 so far: ")
+    # print(mean(type1))
+  }
+  return(list(CI_coverage = rowMeans(passes),  alpha = 0.05, data_list = data_list))
+   
+  
+}
+
+#     out <-   sim.causalGLMwithLasso(compare_with_competitor = T, nsims = 1000, cross_fit = TRUE)
+bigformula <- ~ 1 + W12 + + W2 + W3 + W112 + W123 + W254 + W345 + W234 + W421  + W163 + W164 + W262 + W263 + W419 +  W22 + W3 + W4 + W50 + W86 + W25 + W118 + W299 + W10 + W110 + W312 + W213 + W414 + W290+ W16 + W150 + W333 + W222 + W456
+smallformula <- ~ 1 + W12 + W50  + W299 + W414 
+sim.causalGLMwithLasso <- function(formula = smallformula,  estimand = c("CATE", "OR", "RR"), n = 100, p = 500, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = bigformula, formula_Y0W = bigformula, silent = FALSE, compare_with_competitor = F,    ... ){
+  
+  estimand <- match.arg(estimand)
+  if(estimand == "CATE") {
+    sim <- sim.CATE
+  } else if (estimand == "OR") {
+    sim <- sim.OR
+  } else if (estimand == "RR") {
+    sim <- sim.RR
+  }
+  data_list <- sim(n,p,prop_active,  formula_estimand = formula_true, formula_A = formula_A, formula_Y0W = formula_Y0W)
+  beta <- data_list[[2]]
+  print(beta)
+  beta_A <- data_list$beta_A
+  beta_Y <- data_list$beta_Y
+  passes <- c()
+  passes1 <- c()
+  type1 <- c()
+  print(paste0("Estimand is ", estimand))
+  print(paste0("n=", n, "; p=",p))
+  print(paste0("Total sims is: ", nsims))
+  print(dim(data_list$W))
+  for(i in 1:nsims) {
+    print(paste0("Running simulation iteration: ", i))
+    data_list <- sim(n,p,prop_active,  formula_estimand = formula_true, formula_A = formula_A, formula_Y0W = formula_Y0W, beta = beta, beta_A = beta_A, beta_Y=beta_Y)
+    
+    fit_glm <- causalGLMwithLASSO(formula, W = data_list$W, A = data_list$A, Y = data_list$Y, estimand = estimand,   constant_variance_CATE = TRUE , return_competitor = compare_with_competitor, ...)
+    
+    
+    
+    out <- coef(fit_glm)
     if(is.vector(out)) {
       matrix(out, nrow=1)
     }
@@ -41,7 +112,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
     pval <-  out[,c(7)]
     passes <- cbind(passes, ci[,1] <= beta & ci[,2] >= beta )
     out <- fit_glm$coefs1
-     
+    
     print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
     print(rowMeans(passes))
     if(!is.null(out)) {
@@ -50,15 +121,14 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 ,  estimand = c("CATE", "OR", 
       print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
       print(rowMeans(passes1))
     }
-     
+    
     # print("Proportion of p-values less than 0.05 so far: ")
     # print(mean(type1))
   }
   return(list(CI_coverage = rowMeans(passes), pvalue_prop = mean(type1), alpha = 0.05, data_list = data_list))
-   
+  
   
 }
-  
   
   
 #' Simulate a dataset with known constant CATE
@@ -83,8 +153,9 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
   }
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
-    runif(pY, min=-1,max=1)
+    beta_Y <- runif(pY, min=-1,max=1)
     beta_Y <- 2 * beta_Y*activeY / sum(abs(beta_Y*activeY))
+    
     names(beta_Y) <- colnames(XY)
   }
   
@@ -96,14 +167,14 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
     beta_CATE <- beta
   } else {
     beta_CATE <- runif(ncol(V), min=-1,max=1)
-    beta_CATE <-  beta_CATE / sum(abs(beta_CATE))
+    beta_CATE <-  2*beta_CATE / sum(abs(beta_CATE))
   }
    
   CATE <- V %*% beta_CATE
   
   Q <-CATE* A  + Q0
   if(is.null(sigma)) {
-    sigma <- sd(Q)/4
+    sigma <- sd(Q)/3
   }
   Y <- rnorm(n, mean = Q, sd = sigma) 
   
