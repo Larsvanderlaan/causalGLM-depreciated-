@@ -191,7 +191,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 #' In lower dimensions, we recommend setting this to FALSE.
 #' @param weights An optional vector of weights to use in procedure.
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
-#' @param ... Other arguments to pass to glmnet
+#' @param ... Other arguments to pass to glmnet (NOTE: this use is different than that of \code{causalGLM})
 #' @export
 causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL,...  )  {
   V <- model.matrix(formula, as.data.frame(W))

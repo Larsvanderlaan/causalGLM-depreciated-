@@ -41,7 +41,7 @@ In lower dimensions, we recommend setting this to FALSE.}
 
 \item{data_list}{A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])}
 
-\item{...}{Other arguments to pass to glmnet}
+\item{...}{Other arguments to pass to glmnet (NOTE: this use is different than that of \code{causalGLM})}
 }
 \description{
 causalGLMwithLASSO
