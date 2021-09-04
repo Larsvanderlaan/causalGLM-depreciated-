@@ -187,9 +187,13 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
-    #print(max(abs(scores)))
-    
-    if(max(abs(scores)) <= 1/n) {
+    print("scores")
+    print(scores)
+    weights <- 1/(diag(var(EIF)))
+    weights <- pmax(weights, (sqrt(n)/log(n))^2)
+    scores <- sqrt(sum(scores^2*weights))
+    if(abs(scores) <= 1/n){
+     
       break
     }
     
@@ -203,8 +207,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     
     optim_fit <- optim(
-      par = list(epsilon = 0.002), fn = risk_function,
-      lower = 0, upper = 0.002,
+      par = list(epsilon = 0.05), fn = risk_function,
+      lower = 0, upper = 0.05,
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par

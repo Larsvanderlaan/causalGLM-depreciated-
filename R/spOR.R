@@ -337,10 +337,11 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
     
     
     EIF <- weights*H_star%*%scale_inv*as.vector(Y-Q)
-    score <- max(abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
-    
-    
-    if(abs(score) <= 1/n || abs(score) <= min(0.1,0.5*min(sqrt(diag(var_scaled_init))))/sqrt(n)/log(n)){
+    score <- (abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
+    weights <- 1/(diag(var(EIF)))
+    weights <- pmin(weights, (sqrt(n)/log(n))^2)
+    score <- sqrt(sum(score^2*weights))
+    if(abs(score) <= 1/n){
       converged_flag <- TRUE
       break
     }
@@ -358,7 +359,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
       }
       optim_fit <- optim(
         par = list(epsilon = 0), fn = risk,
-        lower = 0, upper = 0.0025,
+        lower = 0, upper = 0.005,
         method = "Brent"
       )
       eps <-  (scale_inv %*%dir) * optim_fit$par

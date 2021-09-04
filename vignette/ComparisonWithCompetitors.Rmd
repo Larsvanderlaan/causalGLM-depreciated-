@@ -216,7 +216,7 @@ p <- 4
 ### n = 200,  p=4
 ```{r, echo = T, results = "hide"}
 set.seed(seed) 
-n <- 200
+n <-  200
 p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
