@@ -146,8 +146,7 @@ This function also supports general link functions using the "family_RR" argumen
 Yes, but with additional properties. TMLE is a substitution and maximum-likelihood estimator and therefore respects the constraints of the statistical model and tries to listen to the data as much as possible. This can lead to improved finite-sample performance in certain real-world settings like those with model misspecification and positivity/imbalance issues (Porter et al., 2012).
 
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default, robust machine-learning is performed so user specification is not necessary.)
-
-The sim.R file includes randomly generated simulations of coverage for all implemented methods and functions that compare coverage with relative to DML. The simulations suggest that in smaller sample sizes with higher dimensions, causalGLM substantially outperforms competing methods in a number of realistic settings. Randomly generated 95%-confidence-interval-coverage comparison simulations and results between causalGLM and competing estimating equation methods are given in the "ComparisonWithCompetitors.Rmd" file in the vignette folder.
+ 
 
 Example code:
 devtools::install_github("tlverse/sl3", ref="devel")
