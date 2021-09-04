@@ -4,7 +4,7 @@
 
 It is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for answers to causal questions, assuming parametric models can be dangerous. With even a seemingly small amount of confounding and misspecificaton, they can give biased answers. One way of mitigating this challenge is to instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
 
-In this package, we utilize targeted machine-learning to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these semiparametric methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 30-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in a diverse range of settings. Specifically, the methods implement targeted maximum likelihood estimation (TMLE) which simulations suggest is more robust than estimating-equation-based estimators and leads to noticable improvements in confidence interval coverage in higher dimensional settings with smaller sample sizes (e.g. n = 50-250).
+In this package, we utilize targeted machine-learning to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these semiparametric methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 30-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in a diverse range of settings. Specifically, the methods implement targeted maximum likelihood estimation (TMLE) which simulations suggest is more robust than estimating-equation-based estimators and can lead to noticable improvements in confidence interval coverage in higher dimensional settings with smaller sample sizes (e.g. n = 50-250).
 
 Another benefit of this package is that by allowing for adaptive algorithms like MARS, LASSO and other variable selection techniques valid inference can be obtained in high dimensions. This is helpful when there are many possible covariates/confounders to adjust for but you do not know which ones are important. In such settings, parametric glm may break down or lose power.
 
@@ -25,7 +25,7 @@ Simulations suggest:
 1. Robust finite sample performance even when sample size is as low as n = 50-100
 2. Robust performance with higher dimensional model specifications for the CATE/RR/OR
 3. Comparable estimator variance, power and confidence-interval width relative to parametric generalized linear models (glm) even with the significantly relaxed model assumptions
-4.  Outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings, and has similar performance in other settings.
+4.  Outperforms competing methods like semiparametric estimating-equation estimators and Double-Machine-Learning in certain realistic settings, and has matching performance in other settings.
 
  
 
@@ -144,7 +144,7 @@ Yes, but with additional properties. TMLE is a substitution and maximum-likeliho
 
 We support sample-splitting/cross-fitting through the tlverse/sl3 machine-learning pipeline which can be passed into all the implemented methods to specify machine-learning algorithms. (By default, robust machine-learning is performed so user specification is not necessary.)
 
-The sim.R file includes randomly generated simulations of coverage for all implemented methods and it compares coverage relative to DML. The simulations suggest that in smaller sample sizes with higher dimensions, causalGLM substantially outperforms competing methods.
+The sim.R file includes randomly generated simulations of coverage for all implemented methods and functions that compare coverage with relative to DML. The simulations suggest that in smaller sample sizes with higher dimensions, causalGLM substantially outperforms competing methods in a number of realistic settings. Randomly generated 95%-coverage comparison simulations and results between causalGLM and competing estimating equation methods are given in the "ComparisonWithCompetitors.Rmd" file in the vignette folder.
 
 Example code:
 devtools::install_github("tlverse/sl3", ref="devel")
