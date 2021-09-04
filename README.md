@@ -1,5 +1,8 @@
 # causalGLM (In development)
 
+This package is in development. It has been tested and simulations suggest this package is fully functional. However, we cannot guarantee that there are no bugs.
+
+
 ## Semiparametric generalized linear models for causal inference using targeted machine-learning in low and high dimensions
 
 It is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for answers to causal questions, assuming parametric models can be dangerous. With even a seemingly small amount of confounding and misspecificaton, they can give biased answers. One way of mitigating this challenge is to instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
