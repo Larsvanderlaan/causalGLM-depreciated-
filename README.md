@@ -44,7 +44,7 @@ Outputs include:
 4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
 
 #### User-friendly interface for high dimensional settings
-For high dimensional W, you can use the wrapper function "causalGLMwithLASSO" which runs "causalGLM" using a custom glmnet-LASSO learner for estimation. This allows for robust and fast estimation in high dimensional settings where conventional machine-learning algorithms may struggle. Cross-fitting can be performed to reduce bias.
+For high dimensional W, you can use the wrapper function "causalGLMwithLASSO" which runs "causalGLM" using a custom glmnet-LASSO learner for estimation. This allows for robust and fast estimation in high dimensional settings where conventional machine-learning algorithms may struggle. Cross-fitting can be performed to reduce bias. This method can be viewed as an adaptive version of "glm" in that confounders/variables to adjust for are adaptively selected using the LASSO, but still allow for asymptotically correct post-selection inference.
 
  
 
