@@ -191,7 +191,7 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
   }
   Y <- rnorm(n, mean = Q, sd = sigma) 
   
-  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , sd = sd(Q)/3,  CATE = CATE)
+  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , sd = sigma,  CATE = CATE)
   return(list(descr = "Data simulated from parametric linear model with constant conditional average treatment effect", beta_CATE = beta_CATE, data = data, W = W, A = A, Y= Y, beta_A  = beta_A, beta_Y0 = beta_Y, link = "logistic"))
   
 }

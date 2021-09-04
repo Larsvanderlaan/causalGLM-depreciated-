@@ -50,18 +50,18 @@ data_sim$beta_logOR
 
 The sim.R function contains customizable functions that randomly generate test data for both the CATE, RR, and OR functions. The functions sim.causalGLM and sim.causalGLMwithLasso internally call these functions and run nsims number of simulations and report the proportion of estimated 95% confidence intervals that contain the true coefficient values (as determined from the simulation). The confidence interval coverage for the competitor, estimating equation-based estimators, is also reported. Both methods are fit on the same simulation data with the same nuisance estimators and same variance estimator. Therefore, the randomness is only in the difference between the two methods. We will employ these methods to compare the TMLE method implemented in this package, causalGLM, with competitors. 
 
-We will focus on small n with a 4-dimensional covariate model for the estimand. In these settings, differences are especially pronounced. The simulation data distributions are linear main-term parametric models, so that glm and glmnet are correctly specified. This may be unrealistic in some settings but it is an important benchmark. We would like these methods to do just as well as parametric glm in coverage when the assumptions are true.
+We will focus on small n with a 4-dimensional covariate model for the estimand. In these settings, differences are more pronounced. The simulation data distributions are linear main-term parametric models, so that glm and glmnet are correctly specified. This may be unrealistic in some settings but it is an important benchmark. We would like these methods to do just as well as parametric glm in coverage when the assumptions are true.
 
 Note sometimes due to montecarlo randomness one method may by chance perform better than another. For most reliable and fair results, set "nsims" as high as possible, e.g. nsims = 1000 or 2500.
 
-Note the competitor is asyptotically equivalent to causalGLM. There for n large enough (e.g. n=1000), any differences should become smaller.  
+Note the competitor is asyptotically equivalent to causalGLM.  
 
 
 ```{r}
 library(causalGLM)
-seed <- 12345
+seed <- 1234567
  
-nsims <- 200
+nsims <- 500
  
 ```
 ## CATE
