@@ -9,8 +9,39 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-Disclaimer: These simulations are not necessarily representative of the performance of these methods in the real-world. The simulation models are all randomly generated main-term parametric models and there are little-to-no positivity issues. Because of this, glm/glmnet will do better than other machine-learning algorithms in the below simulations. To make the comparison more fair, look at the arguments to the function sim.causalGLM. 
+Disclaimer: These simulations are not necessarily representative of the performance of these methods in the real-world. The simulation models are all randomly generated main-term parametric models and there are little-to-no positivity issues. Because of this, glm/glmnet will do better than other machine-learning algorithms in the below simulations. To make the simulations more difficult, take a look at the arguments to the function sim.causalGLM. 
 
+# Random examples of simulation datasets
+
+```{r}
+n <- 50
+p <- 5
+data_sim <- sim.CATE(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
+# simulated data and true nuisance functions
+data_sim$data
+# True coefs
+data_sim$beta_CATE
+
+
+
+n <- 50
+p <- 5
+data_sim <- sim.RR(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
+# simulated data and true nuisance functions
+data_sim$data
+# True coefs
+data_sim$beta_logRR
+
+
+
+n <- 50
+p <- 5
+data_sim <- sim.OR(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
+# simulated data and true nuisance functions
+data_sim$data
+# True coefs
+data_sim$beta_logOR
+```
 
 # Simulation Comparison with estimating-equation competitors  
 
