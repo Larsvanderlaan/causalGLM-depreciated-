@@ -7,16 +7,16 @@ This package is in development. It has been tested and simulations suggest this 
 
 It is possible to get robust and efficient inference for causal quantities using machine-learning. In the search for answers to causal questions, assuming parametric models can be dangerous. With even a seemingly small amount of confounding and misspecificaton, they can give biased answers. One way of mitigating this challenge is to instead assume a parametric model for only the feature of the data-generating distribution that you care about. That is, assume a semiparametric model! Let the data speak for itself and use machine-learning to model the nuisance features of the data that are not directly related to your causal question. Why worry about things that don't matter for your question (and can only hurt you)? It is not worth the risk of being wrong.
 
-In this package, we utilize targeted machine-learning to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is virtually no loss in precision/p-values/confidence-interval-widths with these semiparametric methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! These methods even work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 30-150). We employ auto-machine-learning that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in a diverse range of settings. Specifically, the methods implement targeted maximum likelihood estimation (TMLE) which simulations suggest is more robust than estimating-equation-based estimators and can lead to noticable improvements in confidence interval coverage in higher dimensional settings with smaller sample sizes (e.g. n = 50-250).
+In this package, we utilize targeted machine-learning to generalize the parametric generalized linear models commonly used for treatment effect estimation (e.g. the R package glm) to the world of semi and nonparametric models. There is little-to-no loss in precision/p-values/confidence-interval-widths with these semiparametric methods relative to parametric generalized linear models, but the bias reduction from these methods can be substantial! Simulations suggest that these methods work well with small sample sizes (simulations show robust inference is possible even when sample sizes are as small as 30-150). We employ auto-machine-learning (Super-Learning) that adapts the aggressiveness of the ML algorithms with sample size, thereby allowing for robust and correct inference in a diverse range of settings. The all methods utilize targeted maximum likelihood estimation (TMLE) which simulations suggest is more robust than estimating-equation-based estimators and can lead to noticable improvements in confidence interval coverage in higher dimensional settings with smaller sample sizes (e.g. n = 50-250).
 
-Another benefit of this package is that by allowing for adaptive algorithms like MARS, LASSO and other variable selection techniques valid inference can be obtained in high dimensions. This is helpful when there are many possible covariates/confounders to adjust for but you do not know which ones are important. In such settings, parametric glm may break down or lose power.
+Another benefit of this package is that, by allowing for adaptive algorithms like MARS, LASSO and other variable selection techniques, valid inference can be obtained in high dimensions. This is helpful when there are many possible covariates/confounders to adjust for but you do not know which ones are important. In such settings, parametric glm may break down or lose power, and using the LASSO does not provide inference.
 
 
 This package supports the estimands:
 
-1. Conditional average treatment effect estimation with "spCATE". (Causal semiparametric linear regression with general link functions)
+1. Conditional average treatment effect estimation with "spCATE". (Causal semiparametric linear regression with custom link functions)
 2. Conditional odds ratio estimation between two binary variables with "spOR". (Causal semiparametric logistic regression)
-3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric log-linear relative-risk regression with general link functions)
+3. Conditional relative risk regression for nonnegative outcomes and a binary treatment with "spRR". (Causal semiparametric log-linear relative-risk regression with custom link functions)
 
 Noticable features supported:
 1. Efficient semiparametric inference even with adaptive estimation and variable selection
@@ -33,21 +33,21 @@ Simulations suggest:
  
 
 ### User-friendly interface
-The functions are designed to be easy to use. A minimalistic yet still very flexible front-end function for all routines is provided through the "causalGLM" function. Check out the vignette to see how to use it! The necessary arguments are: 
+The functions are designed to be easy to use (any feedback will be greatly appreciated). A minimalistic yet still very flexible front-end function for all routines is provided through the "causalGLM" function. Check out the vignette to see how to use it! The necessary arguments are: 
 1. A formula object for the CATE, OR, or RR
 2. The data: W, A, Y
 3. Choice of estimand: "CATE", "OR", "RR"
 
-That's it! Feel free to customize the machine-learning routines available using the "learning_method" argument. Built in options are: auto-HAL, glm, glmnet, gam, earth (MARS), CV-autotuned-xgboost. Cross-fitting is performed automatically. If you want to make your own learner, use the sl3_Learner argument and the tlverse/sl3 package.
+That's it! Feel free to customize the machine-learning routines available using the "learning_method" argument. Built in options are: SuperLearner, HAL, glm, glmnet, gam, earth (MARS), CV-autotuned-xgboost. Cross-fitting is performed automatically. If you want to make your own learner, use the sl3_Learner argument and the tlverse/sl3 package.
 
 Outputs include:
-1. Coefficient estimates
+1. Coefficient estimates (using the S3 summary or coef function)
 2. Z-scores and p-values for coefficients
 3. 95% confidence intervals for coefficients
-4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR
+4. 95% prediction/confidence intervals for evaluations of the CATE/RR/OR (using the S3 predict function)
 
 #### User-friendly interface for high dimensional settings
-For high dimensional W, you can use the wrapper function "causalGLMwithLASSO" which runs "causalGLM" using a custom glmnet-LASSO learner for estimation. This allows for robust and fast estimation in high dimensional settings where conventional machine-learning algorithms may struggle. Cross-fitting can be performed to reduce bias. This method can be viewed as an adaptive version of "glm" in that confounders/variables to adjust for are adaptively selected using the LASSO, but still allow for asymptotically correct post-selection inference.
+For high dimensional W, you can use the wrapper function "causalGLMwithLASSO" which runs "causalGLM" using a custom glmnet-LASSO learner for estimation. This allows for robust and fast estimation in high dimensional settings where conventional machine-learning algorithms may struggle. Cross-fitting can be performed to reduce bias. This method can be viewed as an adaptive version of "glm" in that confounders/variables to adjust for are adaptively selected using the LASSO, but still allow for asymptotically correct post-selection inference. 
 
  
 
@@ -73,7 +73,7 @@ E[Y|A,W] = A CATE(W) + E[Y|A=0,W] where CATE(W) = E[Y|A=1,W] - E[Y|A=0,W] is use
 
 Using the argument "formula_CATE", one can specify a linear model for the CATE of the form CATE(W) = a0 + a W_1 + b W_2 + c W_3 (or whatever you want).
 
-This function only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning via sl3 to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.
+This function only assumes a parametric model for CATE(W) and does not assume anything about E[Y|A=0,W]. We use robust machine-learning via sl3 to learn E[Y|A=0,W] and use targeted learning for valid, robust, and efficient inference.  This allows you to focus all your energy and attention on making a good model for CATE. No need to worry about parts of the data distribution that don't matter for what you care about!
 
 
 Useful models include:
@@ -90,7 +90,7 @@ This specifies a CATE model with effect modification by the baseline variable W_
 
 The above formula is equivalent to CATE(W) = a + b W_1 + c W_1*W_2 + d W_1^2
 
-By default, a theoretically understood, flexible, robust, sparsity and smoothness adapting smoothing spline is used to estimate this nonparametric component. Specifically, we employ the R package hal9001 which implements the highly adaptive lasso estimator (HAL). This allows you to focus all your energy and attention on making a good model for CATE. No need to worry about parts of the data distribution that don't matter for what you care about!
+ 
 
 If you want to use a different link function for the CATE, you can pass a family object using the argument "family_CATE" (by default identity link). For example, if you want "formula_CATE = ~ 1 + W_1" to imply the exponential CATE model CATE(W) = exp(a + b * W_1) then use "family_CATE = poisson()".  
 
