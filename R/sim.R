@@ -66,7 +66,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
       passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )
         
         
-      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print("Coverage probability of 95% confidence intervals of the estimating equation competitor so far: ")
       print(rowMeans(passes1))
      
       
@@ -77,7 +77,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
     report <- function() {
       print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
       print(rowMeans(passes))
-      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print("Coverage probability of 95% confidence intervals of the estimating equation competitor so far: ")
       print(rowMeans(passes1))
     }
   }
@@ -137,7 +137,7 @@ sim.causalGLMwithLasso <- function(formula = smallformula,  estimand = c("CATE",
     if(!is.null(out)) {
       ci <- out[,c(4,5), drop =F]
       passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )
-      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print("Coverage probability of 95% confidence intervals of the estimating equation  competitor so far: ")
       print(rowMeans(passes1))
     }
     
@@ -272,7 +272,7 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
     beta_Y <- runif(pY, min=-1,max=1)
-    beta_Y <- 2*beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- 0.7*beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -285,17 +285,17 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   } else {
     if(ncol(V) > 1){
     betalogOR <- runif(ncol(V), min=-1,max=1)
-    betalogOR <-   2*betalogOR / sum(abs(betalogOR))
+    betalogOR <-   1.5*betalogOR / sum(abs(betalogOR))
     betalogOR <- c( betalogOR)
     } else{
-      betalogOR <- 2
+      betalogOR <- 1
     }
   }
   
   logOR <- V%*%betalogOR 
   Q <- plogis(  A*logOR  +  XY %*% beta_Y)
-  Q1 <- plogis(    1*logOR  +  XY %*% beta_Y)
-  Q0 <- plogis(   XY %*% beta_Y)
+  Q1 <- plogis(   1*logOR  +  XY %*% beta_Y)
+  Q0 <- plogis(  XY %*% beta_Y)
   Y <- rbinom(n, size = 1, prob = Q) 
   
   data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , pY1 = Q1, pY0 = Q0, OR = exp(logOR))

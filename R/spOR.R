@@ -276,26 +276,29 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
   
   risk_function <- function(beta) {
     Q1 <- as.vector(plogis(qlogis(Q0) + V %*% beta))
-    OR <- exp(V %*% beta)
+   # OR <- exp(V %*% beta)  Adding this makes it perform badly
     #h_star1 <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
     h_star <-   as.vector(-(g1*OR) / (g1*OR + (1-g1)))
      
     H_star <- V*(A + h_star)
      
     Q <- ifelse(A==1, Q1, Q0)
-    offset <- qlogis(Q)
+     
     #scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
     #scale_inv <- solve(scale)
     EIF <- weights*H_star*as.vector(Y-Q)
     
     
-    (sum((colMeans(EIF)^2)))
+    sqrt(sum((colMeans(EIF)^2)))
   }
-  (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
-  
+  (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method  = "BFGS"))
+  print(one_step$value) 
   one_step <- one_step$par
-  
-  
+  print("one")
+     print(one_step) 
+     print(beta)
+     print(quantile(Q0))
+     print(quantile(Q1))
   
   
   
@@ -382,6 +385,8 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
     # Q1 <- as.vector(plogis(qlogis(Q0) + logOR)) 
     # Q <- ifelse(A==1, Q1, Q0)
     OR <- exp(logOR)
+    print("beta")
+    print(beta)
     
     
   }

@@ -111,12 +111,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   }
 
   binary <- all(Y %in% c(0,1))
-  if(full_fit_as_offset & !binary) {
-    beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian(), intercept = F))
-    Q <- Q + A*V %*%beta
-    Q1 <- Q1 + V %*%beta
-     
-  }
+   
   
   beta <- coef(glm.fit(V, Q1-Q0, family = family_CATE, intercept = F))
   link <- V %*% beta
@@ -124,6 +119,12 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   Q0 <- as.vector(Q0)
   Q <- as.vector(A*CATE + Q0)
   Q1 <- as.vector(CATE + Q0)
+  if(full_fit_as_offset & !binary) {
+    beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian(), intercept = F))
+    Q <- Q + A*V %*%beta
+    Q1 <- Q1 + V %*%beta
+    
+  }
 
 
 
