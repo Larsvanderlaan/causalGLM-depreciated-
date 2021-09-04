@@ -62,8 +62,14 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
      
     # print("Proportion of p-values less than 0.05 so far: ")
     # print(mean(type1))
+    report <- function() {
+      print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
+      print(rowMeans(passes))
+      print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+      print(rowMeans(passes1))
+    }
   }
-  return(list(CI_coverage = rowMeans(passes),  alpha = 0.05, data_list = data_list))
+  return(list(report = report, CI_coverage = rowMeans(passes), CI_coverage_competitor= rowMeans(passes1), alpha = 0.05, data_list = data_list))
    
   
 }
@@ -126,7 +132,13 @@ sim.causalGLMwithLasso <- function(formula = smallformula,  estimand = c("CATE",
     # print("Proportion of p-values less than 0.05 so far: ")
     # print(mean(type1))
   }
-  return(list(CI_coverage = rowMeans(passes), pvalue_prop = mean(type1), alpha = 0.05, data_list = data_list))
+  report <- function() {
+    print("Coverage probability of 95% confidence intervals of causalGLM so far: ")
+    print(rowMeans(passes))
+    print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
+    print(rowMeans(passes1))
+  }
+  return(list(report = report, CI_coverage = rowMeans(passes),   alpha = 0.05, data_list = data_list))
   
   
 }
@@ -242,13 +254,13 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(is.null(beta_A)) {
     activeA <- rbinom(pA, size = 1, prob =prop_active)
     beta_A <-  runif(pA, min=-1,max=1)
-    beta_A <- 1.5 * beta_A * activeA / sum(abs(beta_A*activeA))
+    beta_A <-   beta_A * activeA / sum(abs(beta_A*activeA))
     names(beta_A) <- colnames(XA)
   }
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
     beta_Y <- runif(pY, min=-1,max=1)
-    beta_Y <- 1.5 * beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- 2*beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -259,17 +271,22 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(!is.null(beta)) {
     betalogOR <- beta
   } else {
+    if(ncol(V) > 1){
     betalogOR <- runif(ncol(V), min=-1,max=1)
-    betalogOR <- sign(betalogOR) * betalogOR / sum(abs(betalogOR))
+    betalogOR <-   2*betalogOR / sum(abs(betalogOR))
+    betalogOR <- c( betalogOR)
+    } else{
+      betalogOR <- 2
+    }
   }
   
   logOR <- V%*%betalogOR 
-  Q <- plogis(  0.75*A*logOR  +  XY %*% beta_Y)
-  
-  
+  Q <- plogis(  A*logOR  +  XY %*% beta_Y)
+  Q1 <- plogis(    1*logOR  +  XY %*% beta_Y)
+  Q0 <- plogis(   XY %*% beta_Y)
   Y <- rbinom(n, size = 1, prob = Q) 
   
-  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , logOR = logOR)
+  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , pY1 = Q1, pY0 = Q0, OR = exp(logOR))
   return(list(descr = "Data simulated from parametric linear model with known odds ratio", beta_logOR = betalogOR, data = data, W = W, A = A, Y= Y, beta_A  = beta_A, beta_Y0 = beta_Y, link = "logistic"))
   
 }

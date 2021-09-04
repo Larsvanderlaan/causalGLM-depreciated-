@@ -123,31 +123,31 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   ################################################################################################
   #### Learn P(Y=1|A,X) under partially linear logistic model assumption #########################
   ################################################################################################
- 
+  
   if(!is.null(sl3_Learner_Y0W)) {
     
     if(!pool_A_when_training ) {
-       
+      
       X <- W
       data_Y <- data.frame(X, A = A, Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates =  colnames(X) , outcome = "Y" , weights= "weights")
       sl3_Learner_Y0W <- sl3_Learner_Y0W$train(task_Y[A==0])
       Q0 <-  sl3_Learner_Y0W$predict(task_Y)
-       
+      
       fit_Y1 <- glm(Y~X-1, data = list(Y=Y[A==1], X=V[A==1, ,drop = F]), weights = weights[A==1], family = binomial(), offset = qlogis(Q0)[A==1])
       beta <- coef(fit_Y1)
       logOR <-  V%*% beta
       Q1 <- as.vector(plogis(qlogis(Q0) + A*logOR))
       Q <- ifelse(A==1,Q1,Q0)
-       
+      
     } else {
-       
+      
       Vtmp <- V
       colnames(Vtmp) <- paste0("V", 1:ncol(V))
       X <- cbind(W, A*Vtmp)
       X1 <- cbind(W, Vtmp)
       X0 <- cbind(W, 0*Vtmp)
-       
+      
       data_Y <- data.table(X,   Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(X) ), outcome = "Y" , weights= "weights")
       data_Y1 <- data.table(X1,    Y=Y, weights = weights)
@@ -162,7 +162,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   } else if(is.null(glm_formula_Y0W)){
     # If no formula use HAL and respect model constraints.
     
-   
+    
     
     weight_tmp <- weights
     
@@ -205,8 +205,10 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
     }
   }
   
-   
+  
   #### Do some model-compatible bounding of Q0
+  #print(quantile(Q0))
+  #print(quantile(Q1))
   Q0 <- as.vector(bound(Q0, 0.005))
   Q1 <- as.vector(bound(Q1, 0.005))
   denom <- pmax((1-Q1)*(Q0), 1e-8)
@@ -218,42 +220,114 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   beta <- as.vector(coef(glm(logOR~V-1, family = gaussian(), data = list(V=V, logOR = logOR ))))
   logOR <- V%*%beta
   Q0 <- as.vector(bound(Q0, 0.005))
-  Q1 <- bound(as.vector(plogis(qlogis(Q0) + logOR)),0.005)
+  Q1 <- as.vector(plogis(qlogis(Q0) + logOR)) 
   Q <- ifelse(A==1, Q1, Q0)
   
   Qinit <- Q
   Qinit1 <- Q1
   Qinit0 <- Q0
   
-   
   
   
-  h_star <-  as.vector(-(g1*Qinit1*(1-Qinit1)) / (g1*Qinit1*(1-Qinit1) + (1-g1)*Qinit0*(1-Qinit0)))
+  h_star <-  Q0*(1-Q0) * as.vector(-(g1*OR) / (g1*OR + (1-g1)))
+  #h_star <-  as.vector(-(g1*Qinit1*(1-Qinit1)) / (g1*Qinit1*(1-Qinit1) + (1-g1)*Qinit0*(1-Qinit0)))
   H_star <- V*(A + h_star)
-  scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Qinit1*(1-Qinit1) * Qinit0*(1-Qinit0) * g1 * (1-g1) / (g1 * Qinit1*(1-Qinit1) + (1-g1) *Qinit0*(1-Qinit0) )) * v*V)})
-   
-  scale_inv <- solve(scale)
+  
+  
+  risk_function <- function(beta) {
+    Q <- bound(plogis(qlogis(Q0) + H_star %*% beta + A*logOR ), 0.0001)
+    loss<- -weights * ifelse(Y==1, log(Q), log(1-Q))
+    #loss <- weights*(Y - family_CATE$linkinv(A*linpred +    A*V %*% beta) - Q0 - hstar %*% beta)^2 / sigma2
+    mean(loss)
+  }
+  (hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T , method = "BFGS")$hessian)
+  
+  
+  scale <- hessian
+  #scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Qinit1*(1-Qinit1) * Qinit0*(1-Qinit0) * g1 * (1-g1) / (g1 * Qinit1*(1-Qinit1) + (1-g1) *Qinit0*(1-Qinit0) )) * v*V)})
+  scale_inv <- NULL
+  tryCatch({ scale_inv <- solve(scale)},
+           error = function(...) {
+             Q1 <- bound(Q1, 0.005)
+             Q0 <- bound(Q0, 0.005)
+             scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / pmax(g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) ,0.005)) * v*V)})
+             scale_inv <<- solve(scale)
+           } )
+  
   var_unscaled <- as.matrix(var(weights*H_star*(Y-Qinit)))
   var_scaled_init <-  scale_inv %*% var_unscaled  %*%  t(scale_inv)
   
   ################################
   ##### Targeting Step ###########
   ################################
-  converged_flag <- FALSE
-  for(i in 1:200) {
+  
+  risk_function <- function(beta) {
+    Q1 <- as.vector(plogis(qlogis(Q0) + V %*% beta))
+    OR <- exp(V %*% beta)
+    #h_star <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
+    h_star <-  Q0*(1-Q0) * as.vector(-(g1*OR) / (g1*OR + (1-g1)))
+    H_star <- V*(A + h_star)
+    H_star1 <- V*(1 + h_star)
+    H_star0 <- V* h_star
+    Q <- ifelse(A==1, Q1, Q0)
+    offset <- qlogis(Q)
+    #scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
+    #scale_inv <- solve(scale)
+    EIF <- weights*H_star*as.vector(Y-Q)
     
-    h_star <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
+    
+    (sum((colMeans(EIF)^2)))
+  }
+  (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
+  
+  one_step <- one_step$par
+  
+  
+  
+  
+  
+  
+  
+  
+  print("here")
+  converged_flag <- FALSE
+  hessian <- NULL
+  OR <- exp(logOR)
+  for(i in 1:200) {
+    # print(quantile(Q0))
+    #print(quantile(Q1))
+    #print(quantile(OR))
+    #h_star <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
+    h_star <-  Q0*(1-Q0) * as.vector(-(g1*OR) / (g1*OR + (1-g1)))
+    
     H_star <- V*(A + h_star)
     H_star1 <- V*(1 + h_star)
     H_star0 <- V* h_star
     offset <- qlogis(Q)
-    scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
+    #scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
     
-    scale_inv <- solve(scale)
     
+    
+    #scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / (g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) )) * v*V)})
+    
+    
+    scale_inv <- NULL
+    tryCatch({ scale_inv <- solve(scale)},
+             error = function(...) {
+               Q1 <- bound(Q1, 0.005)
+               Q0 <- bound(Q0, 0.005)
+               scale <- apply(V,2, function(v){colMeans_safe(weights*as.vector(Delta * Q1*(1-Q1) * Q0*(1-Q0) * g1 * (1-g1) / pmax(g1 * Q1*(1-Q1) + (1-g1) *Q0*(1-Q0) ,0.005)) * v*V)})
+               scale_inv <<- solve(scale)
+             } )
+    
+    
+    
+    
+    EIF <- weights*H_star%*%scale_inv*as.vector(Y-Q)
     score <- max(abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
     
-    if(abs(score) <= 1/n || abs(score) <= min(0.5,0.5*min(sqrt(diag(var_scaled_init))))/sqrt(n)/log(n)){
+    
+    if(abs(score) <= 1/n || abs(score) <= min(0.1,0.5*min(sqrt(diag(var_scaled_init))))/sqrt(n)/log(n)){
       converged_flag <- TRUE
       break
     }
@@ -263,14 +337,14 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
       dir <- dir/sqrt(mean(dir^2))
       risk <- function(epsilon) {
         
-        Qeps <- plogis(offset + clev_reduced%*%dir * epsilon)
+        Qeps <- bound(plogis(offset + clev_reduced%*%dir * epsilon),0.0001)
         loss <- -1 * weights * ifelse(Y==1, log(Qeps), log(1-Qeps))
         return(mean(loss))
         
         
       }
       optim_fit <- optim(
-        par = list(epsilon = 0.01), fn = risk,
+        par = list(epsilon = 0), fn = risk,
         lower = 0, upper = 0.01,
         method = "Brent"
       )
@@ -281,9 +355,19 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
     }
     #eps <- coef(glm(Y~X-1, family = binomial(), weights = weights, offset = offset, data = list(Y = Y, X = H_star)))
     
-    Q0 <- as.vector(plogis(qlogis(Q0) +  H_star0 %*% eps ))
-    Q1 <-  as.vector(plogis(qlogis(Q1) +  H_star1 %*% eps))
+    Q0 <- bound(as.vector(plogis(qlogis(Q0) +  H_star0 %*% eps )),0 )
+    Q1 <-  bound(as.vector(plogis(qlogis(Q1) +  H_star1 %*% eps)),0)
     Q <- ifelse(A==1, Q1, Q0)
+    denom <- pmax((1-Q1)*(Q0), 1e-8)
+    num <- Q1*(1-Q0)
+    OR <- num/denom
+    logOR <- log(pmax(OR, 1e-8))
+    try({beta <- as.vector(coef(glm(logOR~V-1, family = gaussian(), data = list(V=V, logOR = logOR ))))})
+    # logOR <- V%*%beta
+    # Q0 <- as.vector(bound(Q0, 0.005))
+    # Q1 <- as.vector(plogis(qlogis(Q0) + logOR)) 
+    # Q <- ifelse(A==1, Q1, Q0)
+    OR <- exp(logOR)
     
     
   }
@@ -339,6 +423,22 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, data =
   output <- list(coefs = ci, var_mat = var_scaled, n = n, formula = formula,   linkinv = exp, link_type = "Maps linear predictor to OR")
   
   class(output) <- c("spOR", "causalGLM")
+  
+  if(return_competitor) {
+    
+    est <- one_step
+    se <-  sqrt(diag(var_scaled))
+    Zvalue <- abs(sqrt(n) * est/se)
+    pvalue <- signif(2*(1-pnorm(Zvalue)),5)
+    ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
+    out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
+    
+    colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
+    output$coefs1 <- out
+    
+  }
+  
+  
   return(output)
   #######
   
