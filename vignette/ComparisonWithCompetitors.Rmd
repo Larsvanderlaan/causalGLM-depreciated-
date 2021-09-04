@@ -1,6 +1,8 @@
 ---
 title: "SimulationComparisonWithCompetitors"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -9,16 +11,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 
-Disclaimer: These simulations are not necessarily representative of the performance of these methods in the real-world. The simulation models are all randomly generated main-term parametric models and there are little-to-no positivity issues. Because of this, glm/glmnet will do better than other machine-learning algorithms in the below simulations. To make the simulations more difficult, take a look at the arguments to the function sim.causalGLM. 
+Disclaimer: These simulations are not necessarily representative of the performance of these methods in the real-world. The simulation models are all randomly generated main-term parametric models and there are little-to-no positivity issues. Because of this, glm/glmnet will do better than other machine-learning algorithms in the below simulations. To make the simulations more difficult, take a look at the arguments to the function sim.causalGLM. The main point of these simulations is show the robust performance of causalGLM in small sample sizes and settings where parametric glm would do well. We hope these simulations convince you that semiparametric methods need not come at a cost in power/robustness relative to glm in regimes with small sample sizes, even when the truth is a simple parametric model.
 
 # Random examples of simulation datasets
 
-```{r}
+```{r }
+library(causalGLM)
 n <- 50
 p <- 5
 data_sim <- sim.CATE(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
 # simulated data and true nuisance functions
-data_sim$data
+head(data_sim$data)
 # True coefs
 data_sim$beta_CATE
 
@@ -28,7 +31,7 @@ n <- 50
 p <- 5
 data_sim <- sim.RR(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
 # simulated data and true nuisance functions
-data_sim$data
+head(data_sim$data)
 # True coefs
 data_sim$beta_logRR
 
@@ -38,7 +41,7 @@ n <- 50
 p <- 5
 data_sim <- sim.OR(n=n, p=p, formula_estimand =  ~1 + W1 + W2 + W3 + W4, formula_A = ~ ., formula_Y0W =~.)
 # simulated data and true nuisance functions
-data_sim$data
+head(data_sim$data)
 # True coefs
 data_sim$beta_logOR
 ```
@@ -58,13 +61,13 @@ Note the competitor is asyptotically equivalent to causalGLM. There for n large 
 library(causalGLM)
 seed <- 12345
  
-nsims <- 100
+nsims <- 200
  
 ```
 ## CATE
 The estimating equation for CATE is fairly simple (it is linear). Thus, estimating equation estimators should perform better for the CATE relative to non-linear estimating equation estimators (like for RR).
 ### n = 50, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 50
 p <- 5
@@ -91,7 +94,7 @@ p <- 5
 
 
 ### n = 100, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 100
 p <- 5
@@ -117,7 +120,7 @@ p <- 5
 
 
 ### n = 200, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 200
 p <- 5
@@ -149,7 +152,7 @@ p <- 5
 ## RR
 The estimating equation for RR is highly non-linear. This should lead to worse performance for the estimating equation in certain settings.
 ### n = 50, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 50
 p <- 5
@@ -176,7 +179,7 @@ p <- 5
 
 
 ### n = 100, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 100
 p <- 5
@@ -202,7 +205,7 @@ p <- 5
 
 
 ### n = 200,  p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 200
 p <- 5
@@ -233,7 +236,7 @@ p <- 5
 ## OR
   
 ### n = 50, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed)
 n <-   50
 p <- 4
@@ -263,7 +266,7 @@ x$data[, -c(1:5)]
 
 
 ### n = 100, p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed)
 n <- 100
 p <- 4
@@ -289,7 +292,7 @@ p <- 4
 
 
 ### n = 200,  p=5
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed)
 n <- 200
 p <- 4
@@ -316,8 +319,12 @@ p <- 4
 
 
 # High dimensional comparison with causalGLMwithLASSO
+```{r}
+nsims <- 50
 
-```{r, echo = F, include = F}
+
+```
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 50
 p <- 200
@@ -342,7 +349,7 @@ out <-   sim.causalGLMwithLasso(formula = smallformula, n = n, p = p, formula_A 
 
 ```
 
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 100
 p <- 200
@@ -371,7 +378,7 @@ out <-   sim.causalGLMwithLasso(formula = smallformula, n = n, p = p, formula_A 
 
 
 
-```{r, echo = F, include = F}
+```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 250
 p <- 200
