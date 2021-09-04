@@ -87,22 +87,22 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(X)), outcome = "Y", weights= "weights")
         
       sl3_Learner_Y <- sl3_Learner_Y$train(task_Y)
-      Q <-  pmax(sl3_Learner_Y$predict(task_Y),0.01)
-      Q1 <-  pmax(sl3_Learner_Y$predict(task_Y1),0.01)
-      Q0 <-  pmax(sl3_Learner_Y$predict(task_Y0),0.01)
+      Q <-  pmax(sl3_Learner_Y$predict(task_Y),0.005)
+      Q1 <-  pmax(sl3_Learner_Y$predict(task_Y1),0.005)
+      Q0 <-  pmax(sl3_Learner_Y$predict(task_Y0),0.005)
     } else {
       data_Y <- data.table(W, Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W)), outcome = "Y" , weights= "weights", outcome_type = outcome_type)
       lrnr_Y0 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==0])
       lrnr_Y1 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==1])
-      Q1 <-  pmax(lrnr_Y1$predict(task_Y),0.01)
-      Q0 <-  pmax(lrnr_Y0$predict(task_Y),0.01)
+      Q1 <-  pmax(lrnr_Y1$predict(task_Y),0.005)
+      Q0 <-  pmax(lrnr_Y0$predict(task_Y),0.005)
       Q <- ifelse(A==1, Q1, Q0)
     }
   }
-  Q0 <- as.vector(pmax(Q0,0.01))
-  Q1 <- as.vector(pmax(Q1,0.01))
-  Q <- as.vector(pmax(Q,0.01))
+  Q0 <- as.vector(pmax(Q0,0.005))
+  Q1 <- as.vector(pmax(Q1,0.005))
+  Q <- as.vector(ifelse(A==1, Q1, Q0))
   
   
    
@@ -114,8 +114,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   link <- V %*% beta
   logRR <- as.vector(family_RR$linkinv(link))
   RR <- as.vector(exp(logRR))
-  Q0 <- pmax(as.vector(as.vector(Q0)),0.01)
-  Q1 <- pmax(as.vector(Q0 * RR),0.01)
+  Q0 <- pmax(as.vector(as.vector(Q0)),0.005)
+  Q1 <- pmax(as.vector(Q0 * RR),0.005)
   Q <- as.vector(ifelse(A==1, Q1, Q0))
   
   
@@ -197,17 +197,25 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     optim_fit <- optim(
       par = list(epsilon = 0.05), fn = risk_function,
-      lower = 0, upper = 0.15,
+      lower = 0, upper = 0.05,
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par
-    Q0 <-  as.vector(pmax(exp(log(Q0) + hstar %*% eps), 0.01))
+    Q0 <-  as.vector(pmax(exp(log(Q0) + hstar %*% eps), 0.005))
     RR <- as.vector(exp(family_RR$linkinv(linpred +  V %*% eps)))
-    Q1 <- pmax(RR*Q0, 0.01)
+    logRR <- log(RR)
+    Q1 <-  RR*Q0 
     Q <- ifelse(A==1, Q1, Q0)
-    beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
-    
+     beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
+    # logRR <- as.vector(V%*% beta)
+    # RR <- exp(logRR)
+    # Q1 <- pmax(RR*Q0, 0.001)
+    # Q <- ifelse(A==1, Q1, Q0)
   }
+  print(quantile(RR))
+  print(quantile(Q1))
+  print(quantile(Q0))
+  beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
   
   est <- beta
   var_mat <- var(EIF)

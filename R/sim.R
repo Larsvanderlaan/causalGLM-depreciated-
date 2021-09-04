@@ -40,7 +40,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
      # print(out)
     }
     ci <- out[,c(4,5), drop =F]
-    #print(ci)
+    
     pval <-  out[,c(7)]
     passes <- cbind(passes, ci[,1] <= beta & ci[,2] >= beta )
      
@@ -52,7 +52,7 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
     if(!is.null(out)) {
       ci <- out[,c(4,5), drop =F]
       passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )
-       #print(ci)
+        
         
       print("Coverage probability of 95% confidence intervals of the estimating equation (DML) competitor so far: ")
       print(rowMeans(passes1))
@@ -187,7 +187,7 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
   
   Q <-CATE* A  + Q0
   if(is.null(sigma)) {
-    sigma <- sd(Q)/3
+    sigma <- sd(Q)/4
   }
   Y <- rnorm(n, mean = Q, sd = sigma) 
   
@@ -217,7 +217,7 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
     beta_Y <- runif(pY, min=-1,max=1)
-    beta_Y <- 2 * beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- 1.2 * beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -227,7 +227,7 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
     betalogRR <- beta
   } else {
     betalogRR <- runif(ncol(V), min=-1,max=1)
-    betalogRR <-  0.75*betalogRR / sum(abs(betalogRR))
+    betalogRR <-  0.6*betalogRR / sum(abs(betalogRR))
   }
 
   RR <- exp(V %*% betalogRR)

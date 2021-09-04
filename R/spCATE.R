@@ -126,9 +126,9 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
  
   binary <- all(Y %in% c(0,1))
   if(binary) {
-    Qtmp <- bound(Q,0.01)
-    Qtmp1 <- bound(Q1,0.01)
-    Qtmp0 <- bound(Q0,0.01)
+    Qtmp <- bound(Q,0.005)
+    Qtmp1 <- bound(Q1,0.005)
+    Qtmp0 <- bound(Q0,0.005)
     sigma2 <- Qtmp*(1-Qtmp)
     sigma21 <- Qtmp1*(1-Qtmp1)
     sigma20 <- Qtmp0*(1-Qtmp0)
@@ -169,13 +169,13 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     EIF <- weights * as.matrix(H * (Y -  A*as.vector(V%*%beta) - Q0))
     sds <- apply(EIF,2,sd)
     sds <- 1/sds
-    sds <- sds/sum(sds)
+    sds <- 1
     
     
     (sum(sds*(colMeans(EIF)^2)))
   }
    (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
-  
+  print(one_step$value)
   one_step <- one_step$par
    
   
@@ -185,7 +185,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   
   hessian <- NULL
   EIF_init <- NULL
-  for(i in 1:200) {
+  for(i in 1:10) {
     gradM <- family_CATE$mu.eta(V%*%beta)*V
 
     num <- gradM * ( g1/sigma21)
@@ -194,9 +194,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
      
     H <- (A*gradM  + hstar) /sigma2
     EIF <- weights * as.matrix(H * (Y-Q))
-    if(is.null(EIF_init)) {
-      EIF_init <- EIF
-    }
+     
     linpred <- family_CATE$linkfun(Q1-Q0)
     if(T || is.null(hessian)){
     risk_function <- function(beta) {
@@ -214,9 +212,12 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     #stop("d")
     scaleinv <- solve(scale)
     EIF <-  EIF %*%   scaleinv
-
+    if(is.null(EIF_init)) {
+      EIF_init <- EIF
+    }
 
     scores <- colMeans(EIF)
+    
     direction_beta <- scores/sqrt(mean(scores^2))
      #print(scores)
     if(max(abs(scores)) <= 1e-10) {
@@ -248,8 +249,11 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     CATE <- family_CATE$linkinv(link)
     Q <- as.vector(A*CATE + Q0)
     Q1 <- as.vector(CATE + Q0)
+    
   }
-
+  
+   
+  
   linkinv <- family_CATE$linkinv
   
   est <- beta
@@ -260,7 +264,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )
   out <- cbind(est, se/sqrt(n), se,    ci,  Zvalue,pvalue)
   colnames(out) <- c("coefs", "se/sqrt(n)", "se", "CI_left", "CI_right",  "Z-score", "p-value")
-  output <- list(coefs = out, ATE = NULL, var_mat = var(EIF), n=n, formula = formula_CATE, linkinv = linkinv, link_type = "Maps linear predictor to CATE", EIF = EIF)
+  output <- list(coefs = out, ATE = NULL, var_mat = var(EIF_init), n=n, formula = formula_CATE, linkinv = linkinv, link_type = "Maps linear predictor to CATE", EIF = EIF)
   class(output) <- c("spCATE", "causalGLM")
   
   
@@ -268,7 +272,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     
      
     
-    EIF_ATE <- rowMeans(EIF%*%t(V))
+    EIF_ATE <- rowMeans(EIF_init%*%t(V))
     
     se <- sd(EIF_ATE)
     est <-  mean(V%*%beta)
@@ -285,7 +289,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   
   if(return_competitor) {
     est <- one_step
-    se <- sqrt(diag(var(EIF)))
+    se <- sqrt(diag(var(EIF_init)))
     Zvalue <- abs(sqrt(n) * est/se)
     pvalue <- signif(2*(1-pnorm(Zvalue)),5)
     ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )

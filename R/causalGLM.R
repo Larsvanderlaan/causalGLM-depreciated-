@@ -79,7 +79,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   family_glmnet <- NULL
   if(estimand == "RR") {
     family <- poisson()
-    family_glmnet <- "possion"
+    family_glmnet <- "poisson"
      
   }
   
@@ -128,7 +128,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       sl3_Learner_Y <- NULL #autoML(n,p, parallel, fast_analysis, family)
     } else if(learning_method == "glmnet" ) {
       sl3_Learner_A <- Lrnr_glmnet$new()
-      sl3_Learner_Y <- Lrnr_glmnet$new(family = family)
+      sl3_Learner_Y <- Lrnr_glmnet$new(family = family_glmnet)
       
     } else if(learning_method == "glm" ) {
       sl3_Learner_A <- Lrnr_glm$new(formula = glm_formula_A)
@@ -144,9 +144,9 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       sl3_Learner <- Lrnr_cv$new(Lrnr_ranger$new())
     } else if(learning_method == "xgboost" ) {
        
-      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = family), Lrnr_xgboost$new(max_depth =3,  objective = objective), Lrnr_xgboost$new(max_depth =4, objective = objective), Lrnr_xgboost$new(max_depth =5, objective = objective), Lrnr_xgboost$new(max_depth =6, objective = objective), Lrnr_xgboost$new(max_depth =7, objective = objective))
+      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = family_glmnet), Lrnr_xgboost$new(max_depth =3,  objective = objective), Lrnr_xgboost$new(max_depth =4, objective = objective), Lrnr_xgboost$new(max_depth =5, objective = objective) )
       sl3_Learner_Y <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
-      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = NULL), Lrnr_xgboost$new(max_depth =3), Lrnr_xgboost$new(max_depth =4 ), Lrnr_xgboost$new(max_depth =5 ), Lrnr_xgboost$new(max_depth =6 ), Lrnr_xgboost$new(max_depth =7 ))
+      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = NULL), Lrnr_xgboost$new(max_depth =3), Lrnr_xgboost$new(max_depth =4 ), Lrnr_xgboost$new(max_depth =5 )  )
       sl3_Learner_A <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
       
     }
