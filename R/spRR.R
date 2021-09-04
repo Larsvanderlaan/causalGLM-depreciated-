@@ -101,13 +101,16 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       Q <- ifelse(A==1, Q1, Q0)
     }
   }
+  beta <- suppressWarnings(coef(glm.fit(V, log(Q1/Q0), family = gaussian(), intercept = F)))
   
+   
   if(full_fit_as_offset ) {
-    beta <- coef(glm.fit(A*V, Y,  offset = log(Q), family = poisson()))
+    beta <- coef(glm.fit(A*V, Y,  offset = log(Q), family = poisson(), intercept = F))
     Q <- exp(log(Q) + A*V %*%beta)
     Q1 <- exp(log(Q1) + V %*%beta)
     
   }
+  beta <- suppressWarnings(coef(glm.fit(V, log(Q1/Q0), family = gaussian(), intercept = F)))
   
   Q0 <- as.vector(pmax(Q0,0.01))
   Q1 <- as.vector(pmax(Q1,0.01))

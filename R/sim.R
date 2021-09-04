@@ -213,7 +213,7 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
 #' @param p Dimension of W
 #' @param prop_active Proportion of active (nonzero coef) variables
 sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A = ~., formula_Y0W = ~., beta = NULL, beta_A = NULL, beta_Y = NULL) {
-  W <- as.matrix(replicate(p, runif(n, -1,1)))
+  W <- as.matrix(replicate(p, runif(n, -0.5,0.5)))
   colnames(W) <- paste0("W", 1:p)
   XA <- model.matrix(formula_A,as.data.frame(W))
   XY <- model.matrix(formula_Y0W,as.data.frame(W))
@@ -223,13 +223,13 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(is.null(beta_A)) {
     activeA <- rbinom(pA, size = 1, prob =prop_active)
     beta_A <- runif(pA, min=-1,max=1)
-    beta_A <- 1.5 * beta_A * activeA / sum(abs(beta_A*activeA))
+    beta_A <- 3 * beta_A * activeA / sum(abs(beta_A*activeA))
     names(beta_A) <- colnames(XA)
   }
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
     beta_Y <- runif(pY, min=0,max=1)
-    beta_Y <- 0.2 + 1.5 * beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- 0.2 + 3 * beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -239,7 +239,7 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
     betalogRR <- beta
   } else {
     betalogRR <- runif(ncol(V), min=0,max=1)
-    betalogRR <-  0.5*betalogRR / sum(abs(betalogRR))
+    betalogRR <- 1.4* betalogRR / sum(abs(betalogRR))
   }
 
   RR <- exp(V %*% betalogRR)

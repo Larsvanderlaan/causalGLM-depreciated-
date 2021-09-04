@@ -112,7 +112,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
 
   binary <- all(Y %in% c(0,1))
   if(full_fit_as_offset & !binary) {
-    beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian()))
+    beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian(), intercept = F))
     Q <- Q + A*V %*%beta
     Q1 <- Q1 + V %*%beta
      

@@ -195,7 +195,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   }
    
   sl3_Learner_Y0W <- sl3_Learner_Y
- print(sl3_Learner_Y)
+ 
   if(estimand == "RR") {
     return( suppressWarnings({spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...)}))
   }
@@ -250,7 +250,7 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
   if(cross_fit) {
     lrnr <- Lrnr_cv$new(lrnr)
   }
-  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, full_fit_as_offset = TRUE, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE, return_competitor = return_competitor )
+  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, full_fit_as_offset = F, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE, return_competitor = return_competitor )
 }
 
 

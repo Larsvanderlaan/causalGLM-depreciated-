@@ -206,7 +206,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
   }
   
   if(full_fit_as_offset) {
-    beta <- coef(glm.fit(A*V, Y,  offset = qlogis(Q), family = binomial()))
+    beta <- coef(glm.fit(A*V, Y,  offset = qlogis(Q), family = binomial(),  intercept = F))
     Q <- plogis(qlogis(Q) + A*V %*%beta)
     Q1 <- plogis(qlogis(Q1) + V %*%beta)
     

@@ -59,9 +59,9 @@ Note the competitor is asypmtotically equivalent to causalGLM.
 
 ```{r}
 library(causalGLM)
-seed <- 12345678
+seed <- 123123123
  
-nsims <- 500
+nsims <- 200
  
 ```
 ## CATE
@@ -90,8 +90,6 @@ p <- 5
 # The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
  out$report()
 
-### You should see causalGLM do better than the estimating equation estimator.  
-
 ```
 
 
@@ -103,7 +101,7 @@ p <- 5
 
 ### n = 100, p=5
 ```{r, echo = T, results = "hide"}
-set.seed(seed) 
+#set.seed(seed) 
 n <- 100
 p <- 5
 #n=50 is sample size
@@ -153,7 +151,10 @@ p <- 5
 
 
 
+```{r}
+sim.RR(formula_estimand =~1 + W1 + W2, n=n, p=p )$data[,-c(1,2,3)]
 
+```
 
 
 
@@ -161,14 +162,14 @@ p <- 5
 The estimating equation for RR is highly non-linear. This should lead to worse performance for the estimating equation in certain settings.
 ### n = 50, p=4
 ```{r, echo = T, results = "hide"}
-set.seed(seed) 
+set.seed(seed+1) 
 n <-  50
 p <- 3
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
  
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2  , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2  , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR",   compare_with_competitor = T)
 
  
 
@@ -181,7 +182,7 @@ p <- 3
 # The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
  out$report()
 
-### You should see causalGLM do quite a bit better than the estimating equation estimator. Even so, both methods under cover here.
+ 
 
 ```
 
@@ -208,7 +209,7 @@ p <- 4
 # The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
  out$report()
 
-### You should see causalGLM do better than the estimating equation estimator. The >0.95 coverage is likely due to glmnet being a correct parametric model which leads to superefficiency.
+ 
 
 ```
 
