@@ -87,16 +87,17 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       task_Y0 <- sl3_Task$new(data_Y0, covariates = c(colnames(X)), outcome = "Y", weights= "weights")
         
       sl3_Learner_Y <- sl3_Learner_Y$train(task_Y)
-      Q <-  pmax(sl3_Learner_Y$predict(task_Y),0.005)
-      Q1 <-  pmax(sl3_Learner_Y$predict(task_Y1),0.005)
-      Q0 <-  pmax(sl3_Learner_Y$predict(task_Y0),0.005)
+      Q <-  pmax(sl3_Learner_Y$predict(task_Y),0.01)
+      Q1 <-  pmax(sl3_Learner_Y$predict(task_Y1),0.01)
+      Q0 <-  pmax(sl3_Learner_Y$predict(task_Y0),0.01)
+      
     } else {
       data_Y <- data.table(W, Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates = c(colnames(W)), outcome = "Y" , weights= "weights", outcome_type = outcome_type)
       lrnr_Y0 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==0])
       lrnr_Y1 <- sl3_Learner_Y$train(task_Y)$train(task_Y[A==1])
-      Q1 <-  pmax(lrnr_Y1$predict(task_Y),0.005)
-      Q0 <-  pmax(lrnr_Y0$predict(task_Y),0.005)
+      Q1 <-  pmax(lrnr_Y1$predict(task_Y),0.01)
+      Q0 <-  pmax(lrnr_Y0$predict(task_Y),0.01)
       Q <- ifelse(A==1, Q1, Q0)
     }
   }
@@ -107,21 +108,22 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     Q1 <- exp(log(Q1) + V %*%beta)
     
   }
-  Q0 <- as.vector(pmax(Q0,0.005))
-  Q1 <- as.vector(pmax(Q1,0.005))
+  
+  Q0 <- as.vector(pmax(Q0,0.01))
+  Q1 <- as.vector(pmax(Q1,0.01))
   Q <- as.vector(ifelse(A==1, Q1, Q0))
   
    
   if(family_RR$family == "gaussian" & family_RR$link == "identity") {
-    beta <- suppressWarnings(coef(glm.fit(V, Q1/Q0, family = poisson(), intercept = F)))
+    beta <- suppressWarnings(coef(glm.fit(V, log(Q1/Q0), family = gaussian(), intercept = F)))
   } else {
     beta <- coef(glm.fit(V, log(Q1/Q0), family = family_RR, intercept = F))
   }
   link <- V %*% beta
   logRR <- as.vector(family_RR$linkinv(link))
   RR <- as.vector(exp(logRR))
-  Q0 <- pmax(as.vector(as.vector(Q0)),0.005)
-  Q1 <- pmax(as.vector(Q0 * RR),0.005)
+  Q0 <- pmax(as.vector(as.vector(Q0)),0.001)
+  Q1 <- pmax(as.vector(Q0 * RR),0.001)
   Q <- as.vector(ifelse(A==1, Q1, Q0))
   
   
@@ -136,7 +138,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     denom <- RR * g1 + g0
     hstar <- - num/denom
     H <- (A*gradM  + hstar)
-    Q <- pmax(A*RR*Q0 + (1-A)*Q0, 1e-4)
+    Q <- pmax(A*RR*Q0 + (1-A)*Q0, 0.001)
     EIF <- weights *   as.matrix(H * (Y-Q))
     
     sds <- apply(EIF,2,sd)
@@ -149,7 +151,9 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
    
   
   one_step <- one_step$par
+ 
   
+ 
    
   for(i in 1:200) {
     gradM <- family_RR$mu.eta(V%*%beta)*V
@@ -187,8 +191,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
-    print("scores")
-    print(scores)
+    #print("scores")
+    #print(scores)
     weights <- 1/(diag(var(EIF)))
     weights <- pmax(weights, (sqrt(n)/log(n))^2)
     scores <- sqrt(sum(scores^2*weights))

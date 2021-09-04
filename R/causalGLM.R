@@ -74,12 +74,12 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   smoothness_order_Y0W <- smoothness_order_Y0W[1]
   V <- model.matrix(formula, as.data.frame(W))
   if(pool_A_when_training) {
-    penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
+    penalty.factor <- c(rep(1, ncol(W)), rep(0, ncol(V)))
     
   } else {
     penalty.factor <- 1
   }
-  penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
+  
   if(!(smoothness_order_Y0W %in% c(0,1))) {
     stop("smoothness_order_Y0W must be 0 or 1.")
   }
@@ -239,7 +239,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 #' @export
 causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL, constant_variance_CATE = FALSE,  return_competitor  = F,...  )  {
   V <- model.matrix(formula, as.data.frame(W))
-  penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
+  penalty.factor <- c(rep(1, ncol(W)), rep(0, ncol(V)))
   
   if(estimand == "RR") {
     family <- "poisson"

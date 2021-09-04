@@ -163,16 +163,17 @@ The estimating equation for RR is highly non-linear. This should lead to worse p
 ```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <-  50
-p <- 4
+p <- 3
 #n=50 is sample size
 #p=4 is number of covariates in W
-### This will print updates of coverage per iteration to your consol. It should run in a minute or so.\
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
  
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2  , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T)
 
  
 
 ```
+
 ```{r}
 
 
@@ -195,7 +196,7 @@ p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T)
 
  
 
@@ -426,7 +427,7 @@ p <- 8
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T )
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "mars", nsims = nsims, estimand= "CATE", compare_with_competitor = T )
 # This seed seems to be pretty noisy so it takes awhile to get 95% coverage for both.
  
 
@@ -444,15 +445,20 @@ p <- 8
 
 
 
+```{r}
+sim.RR(formula_estimand = ~1  , n= 50, p =2)$data[,-c(1,2,3,4)]
+
+```
+
 
 ```{r, echo = T, results = "hide"}
-set.seed(seed)
+#set.seed(seed)
 n <- 50
-p <- 8
+p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T )
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1    , n=n, p = p, learning_method = "glmnet", nsims = 100, estimand= "RR", compare_with_competitor = T , print_CI_length = F)
 
  
 

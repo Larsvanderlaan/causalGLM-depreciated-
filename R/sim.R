@@ -228,8 +228,8 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   }
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
-    beta_Y <- runif(pY, min=-1,max=1)
-    beta_Y <- 1.2 * beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- runif(pY, min=0,max=1)
+    beta_Y <- 0.2 + 1.5 * beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -238,8 +238,8 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(!is.null(beta)) {
     betalogRR <- beta
   } else {
-    betalogRR <- runif(ncol(V), min=-1,max=1)
-    betalogRR <-  0.6*betalogRR / sum(abs(betalogRR))
+    betalogRR <- runif(ncol(V), min=0,max=1)
+    betalogRR <-  0.5*betalogRR / sum(abs(betalogRR))
   }
 
   RR <- exp(V %*% betalogRR)
@@ -247,7 +247,7 @@ sim.RR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   Q <- (1-A)*Q0 + A*Q0*RR
   Y <- rpois(n, lambda = Q) 
   
-  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q, RR= RR )
+  data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q, pY0 = Q0, pY1 =Q0*RR,  RR= RR )
   return(list(descr = "Data simulated from parametric linear model with known relative risk", beta_logRR = betalogRR, data = data, W = W, A = A, Y= Y, beta_A  = beta_A, beta_Y0 = beta_Y, link = "logistic"))
 }
 #' Simulate a dataset with known constant OR
