@@ -178,17 +178,7 @@ predict(causal_fit, W[1:5,])
 # Estimate is the CATE predictions (i.e. transformed estimate (in this case linear link))  
 # CI_left and CI_right are confidence intervals for the CATE estimate "estimate". P-values are also provided.
 ```
-
-```{r}
-pred <- as.data.frame(predict(causal_fit, W))
-pred
-EIF <- causal_fit$EIF
-EIF_ATE <- rowMeans(apply(pred[,c(1,2,3)],1, function(w) {
-    EIF %*% w
-  }))
-dim(EIF_ATE)
-sd(EIF_ATE)/sqrt(500)
-```
+ 
 
 # causalGLMwithLASSO: causalGLM in high dimensional settings using the LASSO
 
