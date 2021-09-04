@@ -54,7 +54,7 @@ We will focus on small n with a 4-dimensional covariate model for the estimand. 
 
 Note sometimes due to montecarlo randomness one method may by chance perform better than another. For most reliable and fair results, set "nsims" as high as possible, e.g. nsims = 1000 or 2500.
 
-Note the competitor is asyptotically equivalent to causalGLM.  
+Note the competitor is asypmtotically equivalent to causalGLM.  
 
 
 ```{r}
@@ -75,7 +75,7 @@ p <- 5
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
  
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet",    nsims = nsims, estimand= "CATE", compare_with_competitor = T )
 
  
 
@@ -252,7 +252,7 @@ p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
-  out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 +W2 + W3 + W4   , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "OR", compare_with_competitor = T)
+  out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 +W2 + W3 + W4   , n=n, p = p, learning_method = "mars", nsims = nsims, estimand= "OR", compare_with_competitor = T)
 
 # Both do great here!
  
@@ -282,7 +282,7 @@ p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "OR", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "mars", nsims = nsims, estimand= "OR", compare_with_competitor = T)
 
  
 
@@ -300,15 +300,15 @@ p <- 4
 
 
 
-### n = 200,  p=5
+### n = 250,  p=5
 ```{r, echo = T, results = "hide"}
 set.seed(seed)
-n <- 200
+n <- 250
 p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "OR", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "gam", nsims = nsims, estimand= "OR", compare_with_competitor = T, include_glmnet_in_stack = F)
 
  
 
@@ -410,5 +410,87 @@ out <-   sim.causalGLMwithLasso(formula = smallformula, n = n, p = p, formula_A 
  out$report()
 
 ### The two methods perform similar, but it looks like causalGLM has a slight edge.
+
+```
+
+
+# Single coefficient comparison
+
+We now compare the methods when only an intercept is modelled for the estimand. Both methods perform very similarly (and very well).
+
+
+```{r, echo = T, results = "hide"}
+set.seed(seed)
+n <- 50
+p <- 8
+#n=50 is sample size
+#p=4 is number of covariates in W
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T )
+# This seed seems to be pretty noisy so it takes awhile to get 95% coverage for both.
+ 
+
+```
+```{r}
+
+
+# The report function summarizes the coverage
+# The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
+ out$report()
+
+### You should see causalGLM do better than the competing estimating equation method.
+
+```
+
+
+
+
+```{r, echo = T, results = "hide"}
+set.seed(seed)
+n <- 50
+p <- 8
+#n=50 is sample size
+#p=4 is number of covariates in W
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "RR", compare_with_competitor = T )
+
+ 
+
+```
+```{r}
+
+
+# The report function summarizes the coverage
+# The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
+ out$report()
+
+### You should see causalGLM do better than the competing estimating equation method.
+
+```
+
+
+
+
+
+```{r, echo = T, results = "hide"}
+#set.seed(seed)
+n <- 50
+p <- 8
+#n=50 is sample size
+#p=4 is number of covariates in W
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 , n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "OR", compare_with_competitor = T )
+
+ 
+
+```
+```{r}
+
+
+# The report function summarizes the coverage
+# The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
+ out$report()
+
+### You should see causalGLM do better than the competing estimating equation method.
 
 ```

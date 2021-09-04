@@ -12,6 +12,7 @@ spCATE(
   Y,
   family_CATE = gaussian(),
   pool_A_when_training = T,
+  full_fit_as_offset = TRUE,
   constant_variance = FALSE,
   return_ATE = TRUE,
   sl3_Learner_A = NULL,

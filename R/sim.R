@@ -1,7 +1,7 @@
 
  #    out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=50, p = 4, learning_method = "glmnet", nsims = 500, estimand= "CATE", compare_with_competitor = T)
 #' @export
-sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 4, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = TRUE, print_CI_length = FALSE  , ... ){
+sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CATE", "OR", "RR"), n = 75, p = 4, prop_active = 1, nsims = 100, learning_method = "glmnet", formula_true = formula,  formula_A = ~., formula_Y0W = ~., silent = FALSE, compare_with_competitor = TRUE, print_CI_length = F  , ... ){
  
   estimand <- match.arg(estimand)
   if(estimand == "CATE") {
@@ -41,6 +41,9 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
     }
     ci <- out[,c(4,5), drop =F]
     if(print_CI_length) {
+      print("causlglm")
+      print(out[,1])
+      print(ci)
       print(apply(ci,1,diff))
     }
     pval <-  out[,c(7)]
@@ -52,8 +55,12 @@ sim.causalGLM <- function(formula = ~ 1 + W1 + W2 + W3 + W4 ,  estimand = c("CAT
     
     out <- fit_glm$coefs1
     if(!is.null(out)) {
+       
       ci <- out[,c(4,5), drop =F]
       if(print_CI_length) {
+        print("est")
+        print(out[,1])
+        print(ci)
         print(apply(ci,1,diff))
       }
       passes1 <- cbind(passes1, ci[,1] <= beta & ci[,2] >= beta )

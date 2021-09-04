@@ -12,6 +12,7 @@ spRR(
   Y,
   family_RR = gaussian(),
   pool_A_when_training = TRUE,
+  full_fit_as_offset = TRUE,
   sl3_Learner_A = NULL,
   sl3_Learner_Y = NULL,
   weights = NULL,

@@ -17,7 +17,7 @@
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #'
 #' @export
-spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, constant_variance = FALSE,  return_ATE = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), max_degree_sigma =1, num_knots_sigma = ifelse(ncol(W)>=25, 1, 10), fit_control = list(), return_competitor = FALSE){
+spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A_when_training = T, full_fit_as_offset = TRUE, constant_variance = FALSE,  return_ATE = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), max_degree_sigma =1, num_knots_sigma = ifelse(ncol(W)>=25, 1, 10), fit_control = list(), return_competitor = FALSE){
    
   fit_separate <- !pool_A_when_training  
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
@@ -110,6 +110,13 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
      
   }
 
+  binary <- all(Y %in% c(0,1))
+  if(full_fit_as_offset & !binary) {
+    beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian()))
+    Q <- Q + A*V %*%beta
+    Q1 <- Q1 + V %*%beta
+     
+  }
   
   beta <- coef(glm.fit(V, Q1-Q0, family = family_CATE, intercept = F))
   link <- V %*% beta
@@ -124,7 +131,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   # Estimate var
    
  
-  binary <- all(Y %in% c(0,1))
+  
   if(binary) {
     Qtmp <- bound(Q,0.005)
     Qtmp1 <- bound(Q1,0.005)

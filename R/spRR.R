@@ -20,7 +20,7 @@
 #' @param max_degree_Y0W Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @param fit_control Specification for default HAL learner (used if sl3 Learners not given). See spOR for use.
 #' @export
-spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_when_training = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list(), return_competitor = F){
+spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_when_training = TRUE, full_fit_as_offset = TRUE, sl3_Learner_A = NULL, sl3_Learner_Y = NULL, weights = NULL,  smoothness_order_Y0W = 1, max_degree_Y0W = 2, num_knots_Y0W = c(15,5), fit_control = list(), return_competitor = F){
   fit_separate <- !is.null(sl3_Learner_Y) || family_RR$family != "gaussian" || family_RR$link != "identity"
   default_learner <- Lrnr_hal9001$new(smoothness_orders = smoothness_order_Y0W, num_knots = num_knots_Y0W, max_degree = max_degree_Y0W, fit_control = fit_control )
   
@@ -100,10 +100,16 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       Q <- ifelse(A==1, Q1, Q0)
     }
   }
+  
+  if(full_fit_as_offset ) {
+    beta <- coef(glm.fit(A*V, Y,  offset = log(Q), family = poisson()))
+    Q <- exp(log(Q) + A*V %*%beta)
+    Q1 <- exp(log(Q1) + V %*%beta)
+    
+  }
   Q0 <- as.vector(pmax(Q0,0.005))
   Q1 <- as.vector(pmax(Q1,0.005))
   Q <- as.vector(ifelse(A==1, Q1, Q0))
-  
   
    
   if(family_RR$family == "gaussian" & family_RR$link == "identity") {
@@ -130,7 +136,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     denom <- RR * g1 + g0
     hstar <- - num/denom
     H <- (A*gradM  + hstar)
-    Q <- A*RR*Q0 + (1-A)*Q0
+    Q <- pmax(A*RR*Q0 + (1-A)*Q0, 1e-4)
     EIF <- weights *   as.matrix(H * (Y-Q))
     
     sds <- apply(EIF,2,sd)
@@ -182,6 +188,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     scores <- colMeans(EIF)
     direction_beta <- scores/sqrt(mean(scores^2))
     #print(max(abs(scores)))
+    
     if(max(abs(scores)) <= 1/n) {
       break
     }
@@ -196,8 +203,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     
     optim_fit <- optim(
-      par = list(epsilon = 0.05), fn = risk_function,
-      lower = 0, upper = 0.05,
+      par = list(epsilon = 0.002), fn = risk_function,
+      lower = 0, upper = 0.002,
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par
@@ -212,9 +219,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     # Q1 <- pmax(RR*Q0, 0.001)
     # Q <- ifelse(A==1, Q1, Q0)
   }
-  print(quantile(RR))
-  print(quantile(Q1))
-  print(quantile(Q0))
+   
   beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
   
   est <- beta

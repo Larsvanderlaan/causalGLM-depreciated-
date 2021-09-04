@@ -16,6 +16,7 @@ causalGLM(
   learning_method = c("SuperLearner", "HAL", "glm", "glmnet", "gam", "mars", "ranger",
     "xgboost"),
   fast_analysis = TRUE,
+  full_fit_as_offset = TRUE,
   pool_A_when_training = TRUE,
   cross_fit = ifelse(ncol(W) >= 12, T, F),
   sl3_Learner_A = NULL,
@@ -60,6 +61,9 @@ We recommend performing simulations checking 95% CI coverage when choosing learn
 Note speed can vary significantly depending on learner choice!}
 
 \item{fast_analysis}{Whether to generate a simpler SuperLearner for computational speed. Only applies if \code{learning_method} = `SuperLearner``}
+
+\item{full_fit_as_offset}{Whether to update the initial estimator of E[Y|A,W] via an offsetted glm update only fitting the interaction terms with `A` (i.e. `V` above) as specified by \code{formula}.
+Simulations suggest that setting this argument to TRUE improves performance, since it does not penalize/regularize the interactin terms. We note that some learners (e.g. glmnet and HAL) are custom built to not penalize the interaction terms, so that this argument is not needed (but may be useful if cross-fitting is performed).}
 
 \item{pool_A_when_training}{Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...

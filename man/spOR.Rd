@@ -10,6 +10,7 @@ spOR(
   A,
   Y,
   pool_A_when_training = T,
+  full_fit_as_offset = TRUE,
   data = NULL,
   Delta = NULL,
   weights = NULL,
