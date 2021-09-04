@@ -70,10 +70,11 @@ The estimating equation for CATE is fairly simple (it is linear). Thus, estimati
 ```{r, echo = T, results = "hide"}
 set.seed(seed) 
 n <- 50
-p <- 5
+p <- 4
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+ 
  out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T)
 
  

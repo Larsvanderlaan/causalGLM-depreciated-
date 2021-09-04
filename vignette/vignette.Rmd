@@ -20,7 +20,7 @@ A <- data_list$A
 # Outcome (binary in this case)
 Y <- data_list$Y
 
-trueCATE <- data_list$CATE
+trueCATE <- data_list$beta_CATE
 # True treatment effect of data (is constant)
 print(trueCATE)
 
@@ -28,9 +28,9 @@ print(trueCATE)
 # Lets specify a constant model for the CATE
 formula_CATE <- ~ 1
 
-# This will take a few seconds. Default is learning_method = autoHAL which is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree_Y0W or num_knots_Y0W or parallel.
+# This will take a few seconds learning_method = HAL is a regularized sparse/smoothness adaptive regression spline algorithm. To make it faster change: learning_method or max_degree_Y0W or num_knots_Y0W or parallel.
 # 
-causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  max_degree_Y0W = 1, estimand = "CATE")
+causal_fit <- causalGLM(formula = formula_CATE, W  = W, A = A, Y = Y,  estimand = "CATE", learning_method = "HAL", max_degree_Y0W = 1, num_knots_Y0W = 10)
 # We got pretty close!
 coefs <- causal_fit$coefs
 

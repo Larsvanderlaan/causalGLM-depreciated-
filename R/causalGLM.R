@@ -2,13 +2,14 @@
 #' causalGLM
 #' A default and more user-friendly front-end of the implemented methods.
 #' Supports conditional average treatment effect (CATE), conditional odds ratio (OR), and conditional relative risk (RR) estimation
-#' Highly Adaptive Lasso (HAL, R package: tlverse/hal9001), a flexible and adaptive spline regression estimator, is used as default learner (piece-wise linear).
+#' Highly Adaptive Lasso (HAL, R package: tlverse/hal9001), a flexible and adaptive spline regression estimator, is recommended for medium-small to large sample sizes.
 #' @param formula A R formula object specifying the parametric form of CATE, OR, or RR (depending on method).
 #' @param W A named matrix or data.frame of baseline covariates to condition on.
 #' @param A A binary treatment assignment vector
 #' @param Y n outcome variable (continuous, nonnegative or binary depending on method)
 #' @param learning_method Machine-learning method to use. This is overrided if argument \code{sl3_Learner} is provided. Options are:
-#' "autoHAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001} Good for most sample sizes when propertly tuned. See arguments \code{max_degree_Y0W} and \code{num_knots_Y0W}.
+#' "SuperLearner: A stacked ensemble of all of the below that utilizes cross-validation to adaptivelly choose the best learner.
+#' "HAL": Adaptive robust automatic machine-learning using the Highly Adaptive Lasso \code{hal9001} Good for most sample sizes when propertly tuned. See arguments \code{max_degree_Y0W} and \code{num_knots_Y0W}.
 #' "glm": Fit nuisances with parametric model. Best for smaller sample sizes (e.g. n =30-100). See arguments \code{glm_formula_A}, \code{glm_formula_Y} and \code{glm_formula_Y0}.
 #' "glmnet": Learn using lasso with glmnet. Best for smaller sample sizes (e.g. n =30-100)
 #' "gam": Learn using generalized additive models with mgcv. Good for small-to-medium-small sample sizes.
@@ -16,10 +17,12 @@
 #' "ranger": Robust random-forests with the package \code{Ranger} Good for medium-to-large sample sizes.
 #' "xgboost": Learn using a default cross-validation tuned xgboost library with max_depths 3 to 7. Good for medium-to-large sample sizes.
 #' We recommend performing simulations checking 95% CI coverage when choosing learners (especially in smaller sample sizes).
+#' Note speed can vary significantly depending on learner choice! 
+#' @param fast_analysis Whether to generate a simpler SuperLearner for computational speed. Only applies if \code{learning_method} = `SuperLearner``
 #' @param pool_A_when_training Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 #' Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
 #' Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
-#' When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner is cbind(W,A*V) where V is the design matrix specified by the argument \code{formula}.
+#' When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner for `Y` is `cbind(W,A*V)` where `V  = model.matrix(formula, as.data.frame(W))` is the design matrix specified by the argument \code{formula}.
 #' Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
 #' For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.
 #' In high dimensions, pool_A_when_training = FALSE may be preferred to prevent dilution of the treatment interactions in the fitting.
@@ -28,7 +31,7 @@
 #' OR: Estimate conditional odds ratio with \code{spOR} assuming it satisfies parametric model \code{formula}.
 #' OR: Estimate conditional relative risk with \code{spRR} assuming it satisfies parametric model \code{formula}.
 #' @param cross_fit Whether to cross-fit the initial estimator. This is always set to FALSE if argument \code{sl3_Learner} is provided.
-#'  learning_method = AutoML (default) does use cross-fitting for computational reasons and due to it being unnecessary for HAL.
+#' learning_method = `SuperLearner` is always cross-fitted (default).
 #'  learning_method = `xgboost` and `ranger` are always cross-fitted regardless of the value of \code{cross_fit}
 #'  All other learning_methods are only cross-fitted if `cross_fit=TRUE`. 
 #'  Note, it is not necessary to cross-fit glm, glmnet, gam or mars as long as the dimension of W is not too high.
@@ -61,9 +64,10 @@
 #' num_knots_Y0W = c(10,5,1) generates same basis functions as above and also the three-way interaction basis functions with only a single knot point at the origin (e.g. the triple interaction `W1*W2*W3`) (Assuming max_degree_Y0W = 3)
 #' 
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
+#' @param constant_variance_CATE Passed to \code{spCATE}. Whether or not conditional variance is constant (continuous outcome only).
 #' @param ... Other arguments to pass to main routine (spCATE, spOR, spRR) 
 #' @export
-causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c("autoHAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 200, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1), constant_variance_CATE = FALSE, ... ){
+causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c( "SuperLearner", "HAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), fast_analysis = TRUE, pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 200, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1), constant_variance_CATE = FALSE, ... ){
   smoothness_order_Y0W <- smoothness_order_Y0W[1]
   fast_analysis = TRUE
   if(!(smoothness_order_Y0W %in% c(0,1))) {
@@ -72,11 +76,11 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   estimand <- match.arg(estimand)
   learning_method <- match.arg(learning_method)
   family <- NULL
+  family_glmnet <- NULL
   if(estimand == "RR") {
     family <- poisson()
-    if(learning_method %in% c("glmnet", "autoHAL")) {
-      family <- "poisson"
-    }
+    family_glmnet <- "possion"
+     
   }
   
   num_knots_Y0W <- num_knots_Y0W[1:max_degree_Y0W]
@@ -104,10 +108,23 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   sl3_Learner <- NULL
   sl3_Learner_Y_orig <- sl3_Learner_Y
   sl3_Learner_A_orig <- sl3_Learner_A
+  objective <- "reg:squarederror"
+  if(all(Y %in% c(0,1))) {
+    objective   <- "binary:logistic"
+  } 
+  if(estimand == "RR") {
+    objective <- "count:poisson"
+  }
  
   if(is.null(sl3_Learner_Y) || is.null(sl3_Learner_A)) {
-    if(learning_method == "autoHAL" ) {
-      sl3_Learner_A <- autoML(n,p, parallel, fast_analysis, NULL)
+    if(learning_method == "SuperLearner") {
+       
+        learner_list <- autoML(n, p, family, objective, family_glmnet, fast_analysis) 
+        sl3_Learner_A <- learner_list$sl3_Learner_A
+        sl3_Learner_Y <- learner_list$sl3_Learner_Y
+    }
+    else if(learning_method == "HAL" ) {
+      sl3_Learner_A <- autoHAL(n,p, parallel, fast_analysis, NULL)
       sl3_Learner_Y <- NULL #autoML(n,p, parallel, fast_analysis, family)
     } else if(learning_method == "glmnet" ) {
       sl3_Learner_A <- Lrnr_glmnet$new()
@@ -126,13 +143,10 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
     } else if (learning_method == "ranger") {
       sl3_Learner <- Lrnr_cv$new(Lrnr_ranger$new())
     } else if(learning_method == "xgboost" ) {
-      objective <- NULL
-      if(estimand == "RR") {
-        objective <- "count:poisson"
-      }
+       
       sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = family), Lrnr_xgboost$new(max_depth =3,  objective = objective), Lrnr_xgboost$new(max_depth =4, objective = objective), Lrnr_xgboost$new(max_depth =5, objective = objective), Lrnr_xgboost$new(max_depth =6, objective = objective), Lrnr_xgboost$new(max_depth =7, objective = objective))
       sl3_Learner_Y <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
-      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = NULL), Lrnr_xgboost$new(max_depth =3,  objective = NULL), Lrnr_xgboost$new(max_depth =4, objective = NULL), Lrnr_xgboost$new(max_depth =5, objective = NULL), Lrnr_xgboost$new(max_depth =6, objective = NULL), Lrnr_xgboost$new(max_depth =7, objective = NULL))
+      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = NULL), Lrnr_xgboost$new(max_depth =3), Lrnr_xgboost$new(max_depth =4 ), Lrnr_xgboost$new(max_depth =5 ), Lrnr_xgboost$new(max_depth =6 ), Lrnr_xgboost$new(max_depth =7 ))
       sl3_Learner_A <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
       
     }
@@ -155,20 +169,21 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
     
     
   }
-  
+   
   sl3_Learner_Y0W <- sl3_Learner_Y
  
   if(estimand == "RR") {
-    return(spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...))
+    return( suppressWarnings({spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...)}))
   }
   if(inference_type == "semiparametric") {
     if(estimand == "CATE") {
-      return(spCATE(formula_CATE =  formula, W, A, Y, pool_A_when_training = pool_A_when_training,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel), constant_variance = constant_variance_CATE , ...))
+      return(suppressWarnings({spCATE(formula_CATE =  formula, W, A, Y, pool_A_when_training = pool_A_when_training,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel), constant_variance = constant_variance_CATE , ...)}))
     }
     if(estimand == "OR") {
-      return(spOR(formula_logOR = formula, W, A, Y,  pool_A_when_training = pool_A_when_training, weights = weights, W_new = W,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y0W = sl3_Learner_Y0W,  glm_formula_Y0W = glm_formula_Y0W, smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W, reduce_basis = 1e-3, fit_control = list(parallel = parallel), sl3_learner_default = sl3_Learner_Y0W ,... ))
+      return(suppressWarnings({spOR(formula_logOR = formula, W, A, Y,  pool_A_when_training = pool_A_when_training, weights = weights, W_new = W,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y0W = sl3_Learner_Y0W,  glm_formula_Y0W = glm_formula_Y0W, smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W, reduce_basis = 1e-3, fit_control = list(parallel = parallel), sl3_learner_default = sl3_Learner_Y0W ,... )}))
     }
   } 
+ 
   
   
   
@@ -216,30 +231,112 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
 
 
 
- 
-
-#'  
-autoML <- function(n, p, parallel = F, fast_analysis = F, family = NULL) {
-  fit_control <- list(parallel = parallel)
   
+autoML <- function(n, p, family, objective, family_glmnet, fast_analysis) {
+  
+  if(fast_analysis) {
+    if(n <= 50) {
+      max_depth = 1
+    } else if (n <=150){
+      max_depth = 2
+    } else if (n <=250){
+      max_depth = 3
+    } else {
+      max_depth = 4
+    }
+    lrnr_Y_list <- list(
+      Lrnr_mean$new(),
+      Lrnr_glm_fast$new(family = family),
+      Lrnr_glmnet$new(family = family_glmnet),
+      Lrnr_gam$new(family = family),
+      Lrnr_earth$new(degree=1),
+      Lrnr_xgboost$new(max_depth = max_depth, objective = objective))
+    lrnr_A_list <- list(
+      Lrnr_mean$new(),
+      Lrnr_glm_fast$new(),
+      Lrnr_glmnet$new(),
+      Lrnr_gam$new(),
+      Lrnr_earth$new(),
+      #Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(3,0), fit_control = list(n_folds = 5)),
+      Lrnr_xgboost$new(max_depth = max_depth))
+    if(p<=5) {
+      lrnr_Y_list$hal2 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(10,0), fit_control = list(n_folds = 5))
+    } else if (p<=10) {
+      lrnr_Y_list$hal3 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(5,0), fit_control = list(n_folds = 5))
+    }   
+    if (p<= 6) {
+      lrnr_Y_list$hal1 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 2, num_knots = c(1,1), fit_control = list(n_folds = 5))
+    }
+  } else {
+  lrnr_Y_list <- list(
+    Lrnr_mean$new(),
+    Lrnr_glm_fast$new(family = family),
+    Lrnr_glmnet$new(family = family_glmnet),
+    Lrnr_gam$new(family = family),
+    Lrnr_earth$new(),
+    Lrnr_xgboost$new(max_depth = 3, objective= objective),
+    Lrnr_xgboost$new(max_depth = 4, objective = objective),
+    Lrnr_xgboost$new(max_depth = 5, objective = objective),
+    Lrnr_xgboost$new(max_depth = 6, objective = objective)
+  )
+  
+  lrnr_A_list <- list(
+    Lrnr_mean$new(),
+    Lrnr_glm_fast$new(),
+    Lrnr_glmnet$new(),
+    Lrnr_gam$new(),
+    Lrnr_earth$new(),  
+  
+    Lrnr_xgboost$new(max_depth = 3),
+    Lrnr_xgboost$new(max_depth = 4),
+    Lrnr_xgboost$new(max_depth = 5),
+    Lrnr_xgboost$new(max_depth = 6)
+  )
+  if(p<=20) {
+    lrnr_Y_list$hal1 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 2, num_knots = c(1,1), fit_control = list(n_folds = 5))
+    lrnr_Y_list$hal2 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(10,1), fit_control = list(n_folds = 5))
+   # lrnr_A_list$hal1 <-  Lrnr_hal9001$new(smoothness_orders = 1, max_degree = 2, num_knots = c(1,1), fit_control = list(n_folds = 10))
+    #lrnr_A_list$hal2 <-  Lrnr_hal9001$new( smoothness_orders = 1, max_degree = 2, num_knots = c(10,2), fit_control = list(n_folds = 5))
+    
+  } else if (p<=50) {
+    lrnr_Y_list$hal1 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(1,0), fit_control = list(n_folds = 5))
+    lrnr_Y_list$hal2 <- Lrnr_hal9001$new(family = family_glmnet, smoothness_orders = 1, max_degree = 1, num_knots = c(10,0), fit_control = list(n_folds = 5))
+    # lrnr_A_list$hal1 <-  Lrnr_hal9001$new(smoothness_orders = 1, max_degree = 1, num_knots = c(1,0), fit_control = list(n_folds = 5))
+    #lrnr_A_list$hal2 <-  Lrnr_hal9001$new(smoothness_orders = 1, max_degree = 1, num_knots = c(10,0), fit_control = list(n_folds = 5))
+  }
+  }
+  names(lrnr_A_list) <- sapply(lrnr_A_list, `[[`, "name")
+  names(lrnr_Y_list) <- sapply(lrnr_Y_list, `[[`, "name")
+  lrnr_A <- Stack$new(lrnr_A_list)
+  lrnr_Y <- Stack$new(lrnr_Y_list)
+   
+  sl3_Learner_Y <- make_learner(Pipeline, Lrnr_cv$new(lrnr_Y), Lrnr_cv_selector$new(loss_squared_error))
+  sl3_Learner_A <- make_learner(Pipeline, Lrnr_cv$new(lrnr_A), Lrnr_cv_selector$new(loss_loglik_binomial))
+  return(list(sl3_Learner_Y = sl3_Learner_Y, sl3_Learner_A = sl3_Learner_A))
+}
+
+#'
+autoHAL <- function(n, p, parallel = F, fast_analysis = F, family = NULL) {
+  fit_control <- list(parallel = parallel)
+
   if(p >= 200) {
     lrnr <- Lrnr_glmnet$new()
     return(lrnr)
   }
-  
+
   if(p >= 50) {
     lrnr <-  Lrnr_hal9001$new(family=family, smoothness_orders = 1, max_degree = 1, num_knots =  c(5,0), fit_control = fit_control)
     return(lrnr)
   }
-  
+
   if(p >= 25) {
     max_degree <- 1
-    
+
   } else {
     max_degree <- 2
-    
+
   }
-  
+
   if(n<=50) {
     lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = 1, num_knots =  c(1,0), fit_control = fit_control)
   }
@@ -251,17 +348,20 @@ autoML <- function(n, p, parallel = F, fast_analysis = F, family = NULL) {
     }
   } else if(n<=250) {
     if(p<=5) {
-      lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = 2, num_knots =  c(7,3), fit_control = fit_control)
+      lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = 2, num_knots =  c(5,2), fit_control = fit_control)
     } else {
       lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = max_degree, num_knots =  c(3,1), fit_control = fit_control)
     }
   } else if(n<=500) {
     if(p<=5) {
-      lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = 2, num_knots =  c(12,5), fit_control = fit_control)
+      lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = 2, num_knots =  c(10,5), fit_control = fit_control)
     } else {
       lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = max_degree, num_knots =  c(10,5), fit_control = fit_control)
     }
-  } else if(n<=1000) {
+  } else if(fast_analysis) {
+    lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = max_degree, num_knots =  c(10,5), fit_control = fit_control)
+    }
+  else if(n<=1000) {
     lrnr <- Lrnr_hal9001$new(family=family,smoothness_orders = 1, max_degree = max_degree, num_knots =  c(20,10), fit_control = fit_control)
   } else {
     if(fast_analysis) {
