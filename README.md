@@ -1,6 +1,6 @@
 # causalGLM (actively in development)
 
-This package is in development. It has been somewhat tested. However, we cannot guarantee that there are no bugs. If you find any bugs, please let us know.
+This package is in development. I do not recommend using it at the moment as there are bugs.
 
 
 ## Semiparametric generalized linear models for causal inference using targeted machine-learning in low and high dimensions
