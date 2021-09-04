@@ -175,7 +175,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     (sum(sds*(colMeans(EIF)^2)))
   }
    (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method = "BFGS"))
-  print(one_step$value)
+ 
   one_step <- one_step$par
    
   
@@ -258,6 +258,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   
   est <- beta
   se <- sqrt(diag(var(EIF_init)))
+  se_keep <- se
   Zvalue <- abs(sqrt(n) * est/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
 
@@ -289,7 +290,7 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   
   if(return_competitor) {
     est <- one_step
-    se <- sqrt(diag(var(EIF_init)))
+    se <- se_keep
     Zvalue <- abs(sqrt(n) * est/se)
     pvalue <- signif(2*(1-pnorm(Zvalue)),5)
     ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )

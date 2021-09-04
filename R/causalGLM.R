@@ -69,7 +69,14 @@
 #' @export
 causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c( "SuperLearner", "HAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), fast_analysis = TRUE, pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 200, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1), constant_variance_CATE = FALSE, ... ){
   smoothness_order_Y0W <- smoothness_order_Y0W[1]
-  fast_analysis = TRUE
+  V <- model.matrix(formula, as.data.frame(W))
+  if(pool_A_when_training) {
+    penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
+    
+  } else {
+    penalty.factor <- 1
+  }
+  penalty.factor <- c(rep(1, ncol(W)), rep(1e-10, ncol(V)))
   if(!(smoothness_order_Y0W %in% c(0,1))) {
     stop("smoothness_order_Y0W must be 0 or 1.")
   }
@@ -119,7 +126,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   if(is.null(sl3_Learner_Y) || is.null(sl3_Learner_A)) {
     if(learning_method == "SuperLearner") {
        
-        learner_list <- autoML(n, p, family, objective, family_glmnet, fast_analysis) 
+        learner_list <- autoML(n, p, family, objective, family_glmnet, fast_analysis, penalty.factor) 
         sl3_Learner_A <- learner_list$sl3_Learner_A
         sl3_Learner_Y <- learner_list$sl3_Learner_Y
     }
@@ -128,7 +135,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       sl3_Learner_Y <- NULL #autoML(n,p, parallel, fast_analysis, family)
     } else if(learning_method == "glmnet" ) {
       sl3_Learner_A <- Lrnr_glmnet$new()
-      sl3_Learner_Y <- Lrnr_glmnet$new(family = family_glmnet)
+      sl3_Learner_Y <- Lrnr_glmnet$new(family = family_glmnet, penalty.factor = penalty.factor)
       
     } else if(learning_method == "glm" ) {
       sl3_Learner_A <- Lrnr_glm$new(formula = glm_formula_A)
@@ -144,7 +151,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       sl3_Learner <- Lrnr_cv$new(Lrnr_ranger$new())
     } else if(learning_method == "xgboost" ) {
        
-      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = family_glmnet), Lrnr_xgboost$new(max_depth =3,  objective = objective), Lrnr_xgboost$new(max_depth =4, objective = objective), Lrnr_xgboost$new(max_depth =5, objective = objective) )
+      sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = family_glmnet, penalty.factor = penalty.factor), Lrnr_xgboost$new(max_depth =3,  objective = objective), Lrnr_xgboost$new(max_depth =4, objective = objective), Lrnr_xgboost$new(max_depth =5, objective = objective) )
       sl3_Learner_Y <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
       sl3_Learner <- Stack$new( Lrnr_glmnet$new(family = NULL), Lrnr_xgboost$new(max_depth =3), Lrnr_xgboost$new(max_depth =4 ), Lrnr_xgboost$new(max_depth =5 )  )
       sl3_Learner_A <- make_learner(Pipeline, Lrnr_cv$new(sl3_Learner), Lrnr_cv_selector$new(loss_squared_error))
@@ -232,7 +239,7 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
 
 
   
-autoML <- function(n, p, family, objective, family_glmnet, fast_analysis) {
+autoML <- function(n, p, family, objective, family_glmnet, fast_analysis, penalty.factor) {
   
   if(fast_analysis) {
     if(n <= 50) {
@@ -247,7 +254,7 @@ autoML <- function(n, p, family, objective, family_glmnet, fast_analysis) {
     lrnr_Y_list <- list(
       Lrnr_mean$new(),
       Lrnr_glm_fast$new(family = family),
-      Lrnr_glmnet$new(family = family_glmnet),
+      Lrnr_glmnet$new(family = family_glmnet, penalty.factor = penalty.factor),
       Lrnr_gam$new(family = family),
       Lrnr_earth$new(degree=1),
       Lrnr_xgboost$new(max_depth = max_depth, objective = objective))
@@ -271,7 +278,7 @@ autoML <- function(n, p, family, objective, family_glmnet, fast_analysis) {
   lrnr_Y_list <- list(
     Lrnr_mean$new(),
     Lrnr_glm_fast$new(family = family),
-    Lrnr_glmnet$new(family = family_glmnet),
+    Lrnr_glmnet$new(family = family_glmnet, penalty.factor = penalty.factor),
     Lrnr_gam$new(family = family),
     Lrnr_earth$new(),
     Lrnr_xgboost$new(max_depth = 3, objective= objective),

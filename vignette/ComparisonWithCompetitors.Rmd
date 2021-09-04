@@ -59,7 +59,7 @@ Note the competitor is asyptotically equivalent to causalGLM.
 
 ```{r}
 library(causalGLM)
-seed <- 1234567
+seed <- 12345678
  
 nsims <- 500
  
@@ -90,7 +90,7 @@ p <- 5
 # The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
  out$report()
 
-### You should see causalGLM do marginally better than the estimating equation estimator.  
+### You should see causalGLM do better than the estimating equation estimator.  
 
 ```
 
@@ -121,7 +121,7 @@ p <- 5
 # The first row of values is the coverage probability for each coeficient obtained by causalGLM. These values should be 0.95 or larger ideally. Less than 0.95 is undercoverage and is considered bad.
  out$report()
 
- ### You should see causalGLM do marginally better than the estimating equation estimator.  
+ ### You should see causalGLM do better than the estimating equation estimator.  
 
 ```
 
@@ -135,7 +135,7 @@ p <- 5
 #n=50 is sample size
 #p=4 is number of covariates in W
 ### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
- out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T)
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3 + W4, n=n, p = p, learning_method = "glmnet", nsims = nsims, estimand= "CATE", compare_with_competitor = T, print_CI_length = T)
 
  
 
