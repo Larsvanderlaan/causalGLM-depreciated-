@@ -1,4 +1,4 @@
-# causalGLM (actively in development)
+# causalGLM (actively in development, NOT ready for use)
 
 This package is in development. I do not recommend using it at the moment as there are bugs.
 
