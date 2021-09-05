@@ -186,13 +186,13 @@ sim.CATE <- function(n=1500, p=2, prop_active = 1,  sigma = NULL, formula_estima
   
   g1 <- plogis( XA %*% beta_A)
   A <- rbinom(n, size = 1, prob = g1)
-  Q0 <-  XY %*% beta_Y
+  Q0 <-  1 + XY %*% beta_Y
   
   if(!is.null(beta)) {
     beta_CATE <- beta
   } else {
     beta_CATE <- runif(ncol(V), min=-1,max=1)
-    beta_CATE <-  2*beta_CATE / sum(abs(beta_CATE))
+    beta_CATE <-  beta_CATE / sum(abs(beta_CATE))
   }
    
   CATE <- V %*% beta_CATE
@@ -272,7 +272,7 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   if(is.null(beta_Y)) {
     activeY <- rbinom(pY, size = 1, prob =prop_active)
     beta_Y <- runif(pY, min=-1,max=1)
-    beta_Y <- 0.7*beta_Y*activeY / sum(abs(beta_Y*activeY))
+    beta_Y <- 3*beta_Y*activeY / sum(abs(beta_Y*activeY))
     names(beta_Y) <- colnames(XY)
   }
   g1 <- plogis( XA %*% beta_A)
@@ -285,17 +285,17 @@ sim.OR <- function(n=1500, p=2, prop_active = 1, formula_estimand =~1, formula_A
   } else {
     if(ncol(V) > 1){
     betalogOR <- runif(ncol(V), min=-1,max=1)
-    betalogOR <-   1.5*betalogOR / sum(abs(betalogOR))
+    betalogOR <-   1.2*betalogOR / sum(abs(betalogOR))
     betalogOR <- c( betalogOR)
     } else{
-      betalogOR <- 1
+      betalogOR <- 1.5
     }
   }
   
   logOR <- V%*%betalogOR 
-  Q <- plogis(  A*logOR  +  XY %*% beta_Y)
-  Q1 <- plogis(   1*logOR  +  XY %*% beta_Y)
-  Q0 <- plogis(  XY %*% beta_Y)
+  Q <- plogis( 0.5*( A*logOR  +  XY %*% beta_Y))
+  Q1 <- plogis(  0.5*(  1*logOR  +  XY %*% beta_Y))
+  Q0 <- plogis( 0.5*(  XY %*% beta_Y))
   Y <- rbinom(n, size = 1, prob = Q) 
   
   data <- data.frame(W, A=A, Y=Y, pA1 = g1, pY = Q , pY1 = Q1, pY0 = Q0, OR = exp(logOR))

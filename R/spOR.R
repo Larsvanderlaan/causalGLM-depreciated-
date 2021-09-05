@@ -131,6 +131,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
       X <- W
       data_Y <- data.frame(X, A = A, Y=Y, weights = weights)
       task_Y <- sl3_Task$new(data_Y, covariates =  colnames(X) , outcome = "Y" , weights= "weights")
+      
       sl3_Learner_Y0W <- sl3_Learner_Y0W$train(task_Y[A==0])
       Q0 <-  sl3_Learner_Y0W$predict(task_Y)
       
@@ -204,9 +205,9 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
       
     }
   }
-  
+ 
   if(full_fit_as_offset) {
-    beta <- coef(glm.fit(A*V, Y,  offset = qlogis(Q), family = binomial(),  intercept = F))
+    beta <- coef(glm.fit(A*V, Y,  offset = qlogis(bound(Q,1e-9)), family = binomial(),  intercept = F))
     Q <- plogis(qlogis(Q) + A*V %*%beta)
     Q1 <- plogis(qlogis(Q1) + V %*%beta)
     
@@ -276,7 +277,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
   
   risk_function <- function(beta) {
     Q1 <- as.vector(plogis(qlogis(Q0) + V %*% beta))
-   # OR <- exp(V %*% beta)  Adding this makes it perform badly
+    OR <- exp(V %*% beta)  #Adding this makes it perform badly
     #h_star1 <-  as.vector(-(g1*Q1*(1-Q1)) / (g1*Q1*(1-Q1) + (1-g1)*Q0*(1-Q0)))
     h_star <-   as.vector(-(g1*OR) / (g1*OR + (1-g1)))
      
@@ -289,14 +290,14 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
     EIF <- weights*H_star*as.vector(Y-Q)
     
     
-    sqrt(sum((colMeans(EIF)^2)))
+    (sum((colMeans(EIF)^2)))
   }
   (one_step <-  optim(rep(0, ncol(V)),   fn = risk_function, method  = "BFGS"))
-  print(one_step$value) 
+  
   one_step <- one_step$par
-  print("one")
-     print(one_step) 
-     print(beta)
+ 
+    
+     
      print(quantile(Q0))
      print(quantile(Q1))
   
@@ -341,16 +342,16 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
     
     EIF <- weights*H_star%*%scale_inv*as.vector(Y-Q)
     score <- (abs(colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) ))
-    weights <- 1/(diag(var(EIF)))
-    weights <- pmin(weights, (sqrt(n)/log(n))^2)
-    score <- sqrt(sum(score^2*weights))
+    EIF_weights <- 1/(diag(var(EIF)))
+    EIF_weights <- pmin(EIF_weights, (sqrt(n)/log(n))^2)
+    score <- sqrt(sum(score^2*EIF_weights))
     if(abs(score) <= 1/n){
       converged_flag <- TRUE
       break
     }
     if(targeting_method == "universal") {
       clev_reduced <- H_star%*%scale_inv
-      dir <- colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q))
+      dir <- colMeans_safe(weights*H_star%*%scale_inv*as.vector(Y-Q)) * sqrt(EIF_weights)
       dir <- dir/sqrt(mean(dir^2))
       risk <- function(epsilon) {
         
@@ -385,8 +386,7 @@ spOR <- function(formula_logOR = ~1, W, A, Y,   pool_A_when_training = T, full_f
     # Q1 <- as.vector(plogis(qlogis(Q0) + logOR)) 
     # Q <- ifelse(A==1, Q1, Q0)
     OR <- exp(logOR)
-    print("beta")
-    print(beta)
+   
     
     
   }

@@ -16,10 +16,12 @@ causalGLMwithLASSO(
   Y,
   estimand = c("CATE", "OR", "RR"),
   cross_fit = TRUE,
+  full_fit_as_offset = TRUE,
   weights = NULL,
   data_list = NULL,
   constant_variance_CATE = FALSE,
   return_competitor = F,
+  parallel = FALSE,
   ...
 )
 }

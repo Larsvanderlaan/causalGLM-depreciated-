@@ -68,6 +68,7 @@ Simulations suggest that setting this argument to TRUE improves performance, sin
 \item{pool_A_when_training}{Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
 Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
+After estimation, the estimators are projecting onto the semiparametric model, ensuring compatibility with the statistical model assumptions.
 When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner for `Y` is `cbind(W,A*V)` where `V  = model.matrix(formula, as.data.frame(W))` is the design matrix specified by the argument \code{formula}.
 Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
 For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.

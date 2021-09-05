@@ -157,7 +157,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
  
   
  
-   
+   EIF_init <- NULL
   for(i in 1:200) {
     gradM <- family_RR$mu.eta(V%*%beta)*V
     
@@ -169,6 +169,12 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     EIF <- weights *   as.matrix(H * (Y-Q))
     
+    
+    scale <- apply(V,2, function(v) {
+      colMeans_safe(weights*V*v*g1*g0*RR/(g1*RR + g0)^2 *(Y-Q) + H*(A*v*Q))
+    })
+    
+    
     linpred <- family_RR$linkfun(log(Q1/Q0))
     risk_function <- function(beta) {
       logQeps <- A*family_RR$linkinv(linpred + V%*%beta ) + log(Q0)+ hstar%*%beta
@@ -177,9 +183,17 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
       mean(loss)
     }
     
+    if(family_RR$family == "gaussian" && family_RR$link == "identity") {
+      scale <- apply(V,2, function(v) {
+        colMeans_safe(weights*V*v*g1*g0*RR/(g1*RR + g0)^2 *(Y-Q) + H*(A*v*Q))
+      })
+       
+    } else {
+      suppressWarnings(scale <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T)$hessian)
+    }
+    #suppressWarnings(scale <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T)$hessian)
     
-    suppressWarnings(hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T)$hessian)
-    scale <- hessian
+     
     
     
     #print(as.data.frame(hessian))
@@ -190,16 +204,24 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     scaleinv <- solve(scale)
     
     EIF <-  EIF %*%   scaleinv
-    
+    if(is.null(EIF_init)){
+      EIF_init <- EIF
+    }
     
     scores <- colMeans(EIF)
+    print(scores)
     direction_beta <- scores/sqrt(mean(scores^2))
     #print("scores")
     #print(scores)
-    weights <- 1/(diag(var(EIF)))
-    weights <- pmax(weights, (sqrt(n)/log(n))^2)
-    scores <- sqrt(sum(scores^2*weights))
-    if(abs(scores) <= 1/n){
+     
+    EIF_weights <- 1/(diag(var(EIF_init)))
+    EIF_weights <- pmin(EIF_weights, (sqrt(n)/log(n))^2)
+    direction_beta <- scores * sqrt(EIF_weights) 
+    direction_beta <- direction_beta/sqrt(mean(direction_beta^2)) 
+    scores <- sqrt(sum(scores^2*EIF_weights))
+    
+    
+    if(abs(scores) <= 0.5/sqrt(n)/log(n)){
      
       break
     }
@@ -214,8 +236,8 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
     
     
     optim_fit <- optim(
-      par = list(epsilon = 0.05), fn = risk_function,
-      lower = 0, upper = 0.05,
+      par = list(epsilon = 0.01), fn = risk_function,
+      lower = 0, upper = 0.01,
       method = "Brent"
     )
     eps <-  direction_beta * optim_fit$par
@@ -234,7 +256,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   beta <- coef(glm.fit(V, logRR, family = family_RR, intercept = F))
   
   est <- beta
-  var_mat <- var(EIF)
+  var_mat <- var(EIF_init)
   
   RR_linkinv <- function(x) {exp(family_RR$linkinv(x))}
   
@@ -252,7 +274,7 @@ spRR <- function(formula_logRR =  ~1, W, A, Y, family_RR = gaussian(), pool_A_wh
   
   if(return_competitor){
   est <- one_step
-  se <- sqrt(diag(var(EIF)))
+  se <- sqrt(diag(var(EIF_init)))
   Zvalue <- abs(sqrt(n) * est/se)
   pvalue <- signif(2*(1-pnorm(Zvalue)),5)
   ci <- cbind(est - 1.96*se/sqrt(n),est +1.96*se/sqrt(n) )

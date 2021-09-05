@@ -60,8 +60,8 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   }
   if(is.null(sl3_Learner_Y)){
      
-    
-     
+    print("hi")
+     print(num_knots_Y0W)
     fit_Y <- fit_hal(X = as.matrix(W), X_unpenalized = as.matrix(A*V), Y = as.vector(Y), family = "gaussian", fit_control = fit_control, smoothness_orders = smoothness_order_Y0W, max_degree = max_degree_Y0W, num_knots = num_knots_Y0W)
     Q <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (A*V))
     Q0 <- predict(fit_Y, new_data = as.matrix(W), new_X_unpenalized = (0*V))
@@ -121,8 +121,8 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
   Q1 <- as.vector(CATE + Q0)
   if(full_fit_as_offset & !binary) {
     beta <- coef(glm.fit(A*V, Y,  offset = Q, family = gaussian(), intercept = F))
-    Q <- Q + A*V %*%beta
-    Q1 <- Q1 + V %*%beta
+     Q <- as.vector(Q + A*V %*%beta)
+    Q1 <- as.vector(Q1 + V %*%beta)
     
   }
 
@@ -204,12 +204,20 @@ spCATE <- function(formula_CATE =  ~1, W, A, Y, family_CATE = gaussian(), pool_A
     EIF <- weights * as.matrix(H * (Y-Q))
      
     linpred <- family_CATE$linkfun(Q1-Q0)
-    if(T || is.null(hessian)){
+    if(  is.null(hessian)){
     risk_function <- function(beta) {
       loss <- weights*(Y - family_CATE$linkinv(A*linpred +    A*V %*% beta) - Q0 - hstar %*% beta)^2 / sigma2
       mean(loss)/2
     }
-    (hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T , method = "BFGS")$hessian)
+     
+    #print(hessian)
+    
+    if(family_CATE$family == "gaussian" && family_CATE$link == "identity") {
+      hessian <-  optim(rep(0, ncol(V)),   fn = risk_function, hessian = T , method = "BFGS")$hessian
+    } else {
+      hessian <- apply(V,2, function(v) {colMeans_safe(weights*H *(A*v )  ) })
+    }
+     #print(hessian1)
     }
     scale <- hessian
     

@@ -1,0 +1,56 @@
+---
+title: "realisticSims"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+c <- sim.CATE(50,3,formula_Y0W = formula_Y0W, formula_A = formula_Y0W, formula_estimand = ~1 + W1 + W2 + W3)
+
+c$beta_Y0
+
+
+```
+
+
+```{r, echo = T, results = "hide"}
+ 
+n <- 500
+p <- 3
+#n=50 is sample size
+#p=4 is number of covariates in W
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+formula_Y0W <- ~  sin(5*W1)
+# data <- data.frame(W1 = runif(10, -2, 2))
+# data$true <- sin(5*data$W1)
+# as.data.frame(model.matrix(formula_Y0W, data ))
+lrnr_A <- Lrnr_gam$new()
+ 
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1    , n=n, p = p, learning_method = "glm", nsims = 500, estimand= "CATE", formula_Y0W = formula_Y0W,   compare_with_competitor = T, sl3_Learner_A = lrnr_A, formula_A = formula_Y0W,
+                       max_degree_Y0W = 1, num_knots_Y0W = 1, parallel = T, ncores  =5)
+
+ 
+
+```
+
+```{r, echo = T, results = "hide"}
+ 
+n <- 500
+p <- 3
+#n=50 is sample size
+#p=4 is number of covariates in W
+### This will print updates of coverage per iteration to your consol. It should run in a minute or so.
+formula_Y0W <- ~poly(W1, degree = 2) +  poly(W2, degree = 2) +  poly(W3, degree = 2)
+lrnr_A <- Lrnr_gam$new()
+ 
+ out <-  sim.causalGLM(cross_fit = F, formula = ~1 + W1 + W2 + W3  , n=n, p = p, learning_method = "HAL", nsims = 500, estimand= "RR", formula_Y0W = formula_Y0W,   compare_with_competitor = T, sl3_Learner_A = lrnr_A,
+                       max_degree_Y0W = 1, num_knots = 10, parallel = T, ncores  =5)
+
+ 
+
+```

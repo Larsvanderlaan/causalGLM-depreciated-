@@ -22,6 +22,7 @@
 #' @param pool_A_when_training Default: TRUE. This argument is ignored if \code{learning_method} = `autoHAL`, `glm`, `gam`, or `glmnet` and \code{sl3_Learner_Y0W} is NULL. 
 #' Otherwise this is a boolean for whether to estimate the conditional mean/regression of Y by combining observations with A=0,A=1 ...
 #' Or to estimate E[Y|A=1,W] and E[Y|A=0,W] with separate regressions (this is nonparametric in the interaction with A).
+#' After estimation, the estimators are projecting onto the semiparametric model, ensuring compatibility with the statistical model assumptions.
 #' When \code{pool_A_when_training} is TRUE, the design matrix passed to the regression algorithm/learner for `Y` is `cbind(W,A*V)` where `V  = model.matrix(formula, as.data.frame(W))` is the design matrix specified by the argument \code{formula}.
 #' Therefore, it may not be necessary to use learners that model (treatment) interactions when this argument is TRUE.
 #' For \code{learning_method} = glm, gam,  mars, and glmnet this argument is set to TRUE automatically.
@@ -71,13 +72,14 @@
 #' @param ... Other arguments to pass to main routine (spCATE, spOR, spRR) 
 #' @export
 causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   learning_method = c( "SuperLearner", "HAL", "glm", "glmnet", "gam", "mars", "ranger", "xgboost"), fast_analysis = TRUE,  full_fit_as_offset = TRUE, pool_A_when_training = TRUE,  cross_fit = ifelse(ncol(W) >= 12, T, F),  sl3_Learner_A = NULL, sl3_Learner_Y = NULL, glm_formula_A = NULL, glm_formula_Y = NULL,  weights = NULL, data_list = NULL, parallel =  F, ncores = NULL, smoothness_order_Y0W = 1, max_degree_Y0W = ifelse(nrow(W) >= 200, 2,1), num_knots_Y0W = c(ifelse(nrow(W) >= 500 && ncol(W) <= 20, 20, 10),5,1), constant_variance_CATE = FALSE, ... ){
+  
   smoothness_order_Y0W <- smoothness_order_Y0W[1]
   V <- model.matrix(formula, as.data.frame(W))
   if(pool_A_when_training) {
     penalty.factor <- c(rep(1, ncol(W)), rep(0, ncol(V)))
     
   } else {
-    penalty.factor <- 1
+    penalty.factor <- rep(1,ncol(W))
   }
   
   if(!(smoothness_order_Y0W %in% c(0,1))) {
@@ -96,7 +98,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   num_knots_Y0W <- num_knots_Y0W[1:max_degree_Y0W]
    
   if(learning_method %in% c("glm", "glmnet", "gam","mars")) {
-    pool_A_when_training <- TRUE
+    #pool_A_when_training <- TRUE
   }
   inference_type =  "semiparametric"
   if(parallel & !is.null(ncores)) {
@@ -195,7 +197,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
   }
    
   sl3_Learner_Y0W <- sl3_Learner_Y
- 
+ print(sl3_Learner_Y)
   if(estimand == "RR") {
     return( suppressWarnings({spRR(formula_logRR =  formula, W, A, Y, pool_A_when_training = pool_A_when_training, sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel),...)}))
   }
@@ -204,7 +206,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
       return(suppressWarnings({spCATE(formula_CATE =  formula, W, A, Y, pool_A_when_training = pool_A_when_training,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y = sl3_Learner_Y,   weights = weights,  smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W,  fit_control = list(parallel = parallel), constant_variance = constant_variance_CATE , ...)}))
     }
     if(estimand == "OR") {
-      return(suppressMessages(suppressWarnings({spOR(formula_logOR = formula, W, A, Y,  pool_A_when_training = pool_A_when_training, weights = weights, W_new = W,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y0W = sl3_Learner_Y0W,  glm_formula_Y0W = glm_formula_Y0W, smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W, reduce_basis = 1e-3, fit_control = list(parallel = parallel), sl3_learner_default = sl3_Learner_Y0W ,... )})))
+      return(suppressMessages(suppressWarnings({spOR(formula_logOR = formula, W, A, Y,  pool_A_when_training = pool_A_when_training, weights = weights, W_new = W,  sl3_Learner_A = sl3_Learner_A, sl3_Learner_Y0W = sl3_Learner_Y0W,  glm_formula_Y0W = NULL, smoothness_order_Y0W = smoothness_order_Y0W, max_degree_Y0W = max_degree_Y0W, num_knots_Y0W = num_knots_Y0W, reduce_basis = 1e-3, fit_control = list(parallel = parallel), sl3_learner_default = sl3_Learner_Y0W ,... )})))
     }
   } 
  
@@ -237,7 +239,7 @@ causalGLM <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"),   lear
 #' @param data_list A named list containing the arguments `W`, `A` and `Y`. For example, data_list = list(W = data[,c("W1", "W2")], A = data[,"A"], Y = data[,"Y"])
 #' @param ... Other arguments to pass to glmnet (NOTE: this use is different than that of \code{causalGLM})
 #' @export
-causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE,weights = NULL,data_list = NULL, constant_variance_CATE = FALSE,  return_competitor  = F,...  )  {
+causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"), cross_fit = TRUE, full_fit_as_offset = TRUE, weights = NULL,data_list = NULL, constant_variance_CATE = FALSE,  return_competitor  = F, parallel = FALSE,...  )  {
   V <- model.matrix(formula, as.data.frame(W))
   penalty.factor <- c(rep(1, ncol(W)), rep(0, ncol(V)))
   
@@ -246,11 +248,13 @@ causalGLMwithLASSO <- function(formula, W, A, Y, estimand = c("CATE", "OR", "RR"
   } else {
     family <- NULL
   }
-  lrnr <- Lrnr_glmnet$new(family = family, penalty.factor=penalty.factor,...)
+  lrnr_Y <- Lrnr_glmnet$new(family = family, penalty.factor=penalty.factor, parallel = parallel,...)
+  lrnr_A <- Lrnr_glmnet$new(family = "binomial", parallel = parallel,...)
   if(cross_fit) {
-    lrnr <- Lrnr_cv$new(lrnr)
+    lrnr_Y <- Lrnr_cv$new(lrnr_Y)
+    lrnr_A <- Lrnr_cv$new(lrnr_A)
   }
-  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr, learning_method = "glmnet", cross_fit = cross_fit, full_fit_as_offset = F, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE, return_competitor = return_competitor )
+  causalGLM(formula, W, A, Y, estimand,sl3_Learner_Y = lrnr_Y, sl3_Learner_A = lrnr_A, learning_method = "glmnet", cross_fit = cross_fit, full_fit_as_offset = full_fit_as_offset, weights = weights, num_knots_Y0W = 1, max_degree_Y0W =1, data_list = data_list , constant_variance = constant_variance_CATE, return_competitor = return_competitor )
 }
 
 
