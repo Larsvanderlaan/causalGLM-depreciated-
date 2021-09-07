@@ -1,4 +1,4 @@
-# This version is depreciated. The latest version is here: https://github.com/Larsvanderlaan/causalGLM
+# This version is depreciated (and probably broken). The latest version is here: https://github.com/Larsvanderlaan/causalGLM
 
 
 # causalGLM (actively in development, NOT ready for use)
