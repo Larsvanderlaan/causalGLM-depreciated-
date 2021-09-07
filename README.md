@@ -1,3 +1,6 @@
+# This version is depreciated. The latest version is here: https://github.com/Larsvanderlaan/causalGLM
+
+
 # causalGLM (actively in development, NOT ready for use)
 
 This package is in development. I do not recommend using it at the moment as there are bugs.
